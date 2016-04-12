@@ -53,22 +53,22 @@ int main (int argc, char *argv[]) {
        * the option */
       switch (c) {
         case 'f':
-	        firstName = argv[i+1];
-	        break;
+          firstName = argv[i+1];
+          break;
 
         case 'l':
-	        lastName = argv[i+1];
+          lastName = argv[i+1];
           break;
 
         case 's':
-	       serverHost = strtok(argv[i+1],":");
-	       if ((servPortString = strtok(NULL, ":")) != NULL) {
-	         serverPort = atoi(servPortString);
-        	}
-	       break;
+         serverHost = strtok(argv[i+1],":");
+         if ((servPortString = strtok(NULL, ":")) != NULL) {
+           serverPort = atoi(servPortString);
+          }
+         break;
 
         default:
-	       break;
+         break;
       }
     }
   }
@@ -77,9 +77,7 @@ int main (int argc, char *argv[]) {
 
   // create string to be sent
   char echoString[BUFFSIZE];
-  strcpy( echoString, "LIST");
-
-  strcat( echoString, "\n" );
+  strcpy( echoString, "LIST\n");
 
   // set up connection on a socket
   int sock = SetupClientSocket(serverHost, servPortString);
@@ -95,8 +93,8 @@ int main (int argc, char *argv[]) {
 
 
 // Sets up the connection and returns the socket associated with that connection
-int SetupClientSocket(const char* host, const char* service) 
-{
+int SetupClientSocket(const char *host, const char *service) {
+
  // Tell the system what kind(s) of address info
  struct addrinfo addrCriteria;
  memset(&addrCriteria, 0, sizeof(addrCriteria));
@@ -113,7 +111,6 @@ int SetupClientSocket(const char* host, const char* service)
  int sock = -1;
  struct addrinfo* addr;
  for (addr = servAddr; addr != NULL; addr = addr->ai_next) {
-  
    // Create a reliable, stream socket using TCP
    sock = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
    if (sock < 0)
@@ -254,4 +251,3 @@ void DieWithError(char *errorMessage)
   perror(errorMessage);
   exit(0);
 }
-
