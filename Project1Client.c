@@ -39,8 +39,8 @@ int main (int argc, char *argv[]) {
   char c;
   int i;
 
-  if ((argc < 1) || (argc > 3)) {
-    printf("Error: Usage Project0Client [-s <server IP>[:<port>]]\n");
+  if ((argc < 5) || (argc > 7)) {
+    printf("Error: Usage Project0Client [-s <server IP>[:<port>]] -f <firstName> -l <lastName>\n");
     exit(1);
   }
 
