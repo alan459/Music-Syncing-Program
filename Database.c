@@ -20,30 +20,38 @@ void open_database ( char *filename) {
 
 
 /**
-* Takes as a parameter database name?
+* Takes as a parameter a location in which to store the number of files in the database.
 * Returns an array containing the song names in the database and their corresponding SHAs
-* Might
 **/
 char** lookup_songs (int* no_of_entries) 
 {
+
   char* currentLine = (char *) malloc(MAXIMUM_DATABASE_ENTRY_LENGTH + 1);
 
+  // for holding song name when going through the database
   char* firstField = malloc(FIRSTFIELD_LENGTH + 1);
+
+  // for holding song SHA when going through the database
   char* secondField = malloc(SECONDFIELD_LENGTH + 1);
 
+  // intialize the number of entries
   *no_of_entries = 0;
 
+  // loop through the entries on each line of the database until null is encountered
   while ( fgets(currentLine, MAXIMUM_DATABASE_ENTRY_LENGTH, filePointer) !=  NULL ) 
-  {
+  { 
+      // retrieve the name of the song
       firstField = strtok(currentLine, ":");
-      //secondField = strtok(NULL, ":")) == NULL;
 
+      // retrieve the SHA of the song
       if (( secondField = strtok(NULL, ":")) == NULL) {
          break; 
       }
 
+      // allocate space for a song and SHA entry
+      songList[*no_of_entries] = (char *) malloc(FIRSTFIELD_LENGTH + SECONDFIELD_LENGTH + 2); 
 
-      songList[*no_of_entries] = (char *) malloc(200);
+      // add a song and its SHA to the list of entries in the array
       sprintf(songList[(*no_of_entries)++],"%s:%s", firstField, secondField);
 
   }
@@ -89,6 +97,10 @@ void addSong(char* songName, char* SHA)
 /** 
 * Given an SHA returns a song name. 
 **/
+char* getSongName(char* SHA)
+{
+  return "";
+}
 
 
 

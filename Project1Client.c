@@ -86,6 +86,8 @@ int main (int argc, char *argv[]) {
 
   HandleProj1Client(sock, echoString, serverHost, serverPort);
 
+            
+
   close(sock);
   exit(0); 
 
@@ -132,6 +134,8 @@ int SetupClientSocket(const char *host, const char *service) {
 
 void HandleProj1Client(int cliSock, char *randString, char *serverHost, unsigned short serverPort)
 {
+
+
   // Determine length of the first messsage to be sent
   size_t echoStringLen = strlen(randString); 
 
@@ -147,24 +151,36 @@ void HandleProj1Client(int cliSock, char *randString, char *serverHost, unsigned
 
   // Receive the response message (ack) from the server
   fputs("Received: ", stdout); 
-   
- // int j;
-  char buffer[BUFFSIZE]; // I/O buffer
-  /* Receive up to the buffer size (minus 1 to leave space for
-  a null terminator) bytes from the sender */
+   char buffer[BUFFSIZE];
 
-  // RECIEVE the 1ST MESSAGE from server
-  numBytes = recv(cliSock, buffer, BUFFSIZE - 1, 0);
+  // printf("reached handleporj1client\n"); \\ debugging
+  // receive message from client
+  char rcvMessage[BUFFSIZE]; // Buffer for received message
+  rcvMessage[0] = '\0'; // initialize to empty C-string
+  for (;;)
+  {
+    //printf("Entered infinite loop\n"); // debugging
+   // char buffer[BUFFSIZE];
+    ssize_t numBytesRcvd = recv(cliSock, buffer, BUFFSIZE-1, 0);
+    //printf("numBytesRcvd: %zu\n", numBytesRcvd); // debugging
+    //printf("hello buffer received: %s\n", buffer); // debugging
+    if (numBytesRcvd < 0)
+      DieWithError("recv() failed");
+    else if (numBytesRcvd == 0)
+      DieWithError("recv() failed: connection closed prematurely");
+    buffer[numBytesRcvd] = '\0'; // append null-character
+    strcat(rcvMessage, buffer); // append the received buffer to ackMessage
 
-  // CHECK if RECIEVE was SUCCESSFUL
-  if (numBytes < 0)
-    DieWithError("recv() failed");
-  else if (numBytes == 0)
-    DieWithError("recv(), connection closed prematurely");
-  buffer[numBytes] = '\0';
+    // if new-line character is received, exit the loop
+    if (buffer[numBytesRcvd-1] == '\n')
+    {
+      //printf("new-line char received\n"); // debugging
+      break;
+    }
+    //printf("end\n"); // debugging
+  }
 
-  // PRINT the RECIEVED message 
-  fputs(buffer, stdout); 
+
 
 
   // BYE MESSAGE to be sent back to the server
