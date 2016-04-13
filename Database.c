@@ -22,6 +22,7 @@ void open_database ( char *filename) {
 /**
 * Takes as a parameter database name?
 * Returns an array containing the song names in the database and their corresponding SHAs
+* Might
 **/
 char** lookup_songs (int* no_of_entries) 
 {
@@ -30,7 +31,7 @@ char** lookup_songs (int* no_of_entries)
   char* firstField = malloc(FIRSTFIELD_LENGTH + 1);
   char* secondField = malloc(SECONDFIELD_LENGTH + 1);
 
-  no_of_entries = 0;
+  *no_of_entries = 0;
 
   while ( fgets(currentLine, MAXIMUM_DATABASE_ENTRY_LENGTH, filePointer) !=  NULL ) 
   {
@@ -38,12 +39,12 @@ char** lookup_songs (int* no_of_entries)
       //secondField = strtok(NULL, ":")) == NULL;
 
       if (( secondField = strtok(NULL, ":")) == NULL) {
-         break;
+         break; 
       }
 
 
-      songList[no_of_entries] = (char *) malloc(100);
-      sprintf(songList[(no_of_entries)++],"%s:%s", firstField, secondField);
+      songList[*no_of_entries] = (char *) malloc(200);
+      sprintf(songList[(*no_of_entries)++],"%s:%s", firstField, secondField);
 
   }
 
