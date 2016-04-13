@@ -9,7 +9,7 @@
 static FILE* filePointer;
 static char* songList[MAX_NUM_RECORDS];
 static char** nullPtr = NULL;
-static int* no_of_entries;
+static int* numEntries;
 
 void open_database ( char *filename) {
   if ( (filePointer = fopen(filename,"r+")) == NULL ) {
@@ -23,7 +23,7 @@ void open_database ( char *filename) {
 * Takes as a parameter database name?
 * Returns an array containing the song names in the database and their corresponding SHAs
 **/
-char** lookup_songs () 
+char** lookup_songs (int* no_of_entries) 
 {
   char* currentLine = (char *) malloc(MAXIMUM_DATABASE_ENTRY_LENGTH + 1);
 
