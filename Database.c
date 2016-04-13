@@ -23,9 +23,9 @@ void open_database ( char *filename) {
 * Takes as a parameter database name?
 * Returns an array containing the song names in the database and their corresponding SHAs
 **/
-char** lookup_songs (char* filename) {
-
-  char *currentLine = (char *) malloc(MAXIMUM_DATABASE_ENTRY_LENGTH + 1);
+char** lookup_songs () 
+{
+  char* currentLine = (char *) malloc(MAXIMUM_DATABASE_ENTRY_LENGTH + 1);
 
   char* firstField = malloc(FIRSTFIELD_LENGTH + 1);
   char* secondField = malloc(SECONDFIELD_LENGTH + 1);
@@ -51,15 +51,18 @@ char** lookup_songs (char* filename) {
 }
 
 
-
-bool containsSong(char* filename, char* comparedSha) {
+/**
+* Takes filename and SHA value as parameters and determines if the database contains that file
+**/
+bool containsSong(char* filename, char* comparedSha) 
+{
   char *currentLine = (char *)  malloc(MAXIMUM_DATABASE_ENTRY_LENGTH+1);
 
   char* shaField = malloc(SECONDFIELD_LENGTH + 1);
 
   while ( fgets(currentLine, MAXIMUM_DATABASE_ENTRY_LENGTH, filePointer) != NULL)
   {
-    shaFiel
+   // shaFiel
   }
 }
 
@@ -72,7 +75,7 @@ bool containsSong(char* filename, char* comparedSha) {
 * if a non-newline character exists at the end it will result 
 * in a combined string.
 **/
-void addSong(char* songName, char* SHA, char* filename) 
+void addSong(char* songName, char* SHA) 
 {
 
   FILE* append = filePointer;
@@ -81,6 +84,11 @@ void addSong(char* songName, char* SHA, char* filename)
   fprintf(append, "%s:%s\n", songName, SHA); // add to end of file
   fclose(append);
 }
+
+/** 
+* Given an SHA returns a song name. 
+**/
+
 
 
 
