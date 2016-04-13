@@ -181,24 +181,42 @@ int findSecondSpace(const char *str)
 	return spacePos;
 }
 
+
+/**
+*This method compares the songs listed in the input buffer via sha
+*with the songs in the client/server's database, and returns an output buffer
+*that list all of the songs with their sha values that are not already in
+*the database.
+*/
 char* compareSongs(char* inputBuffer) {
+	//allocate a variable for names in the buffer
 	char name[30];
+	//allocat a variable for sha in the buffer
 	char sha[128];
+	//generically allocated output buffer
 	char result[BUFFSIZE];
+	//Used to skip the header in the input buffer
 	int iter = 4;
-	while(iter < strlen(inputBuffer) &&  inputBuffer[iter] != '\n') {
-		for(int i = 0; i < 30; i++) {
+	//go through the entire input buffer
+	while(iter < strlen(inputBuffer)) {
+		//Retrieve next Name
+		for(int i = 0 + iter; i < 30 + iter; i++) {
 			name[i] = inputBuffer[i];
 		}
-		for(int j = 30; j < 158; j++) {
+		//Retrieve next SHA
+		for(int j = 30 + iter; j < 158 + iter; j++) {
 			sha[j] = inputBuffer[j];
 		}
+		//update the iterator value
 		iter = iter + 158;
+		//if the song is not found in the database, add it to output buffer
 		if(containsSong(sha) == 0) {
 			strcat(result,name);
 			strcat(result,":");
 			strcat(result,sha);
+			strcat(result,"\n");
 		}
 	}
-	strcat(result"\n");
+	//null terminate the buffer
+	strcat(result"\0");
 }
