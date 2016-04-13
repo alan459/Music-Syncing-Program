@@ -106,13 +106,12 @@ bool containsSong(char* filename, char* comparedSha) {
 
 int main() {
 	char* a = "database.dat";
-	/*addSong("newsong", "shaCode", a);
+	addSong("newsong", "shaCode", a);
 	char** songs = lookup_songs("database.dat");
 	int numEntries = 6;
 	for(int i = 0; i < numEntries; i++) {
 		printf("%s", songs[i]);
 	}
 	printf("%s \n", a);
-	return 0;*/
-  printf("%s\n",containsSong(a, "1222") );
+	return 0;
 }

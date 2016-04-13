@@ -181,10 +181,11 @@ int findSecondSpace(const char *str)
 	return spacePos;
 }
 
-char* compareSongs(char inputBuffer) {
+char* compareSongs(char* inputBuffer) {
 	char name[30];
 	char sha[128];
-	int iter = 4;;
+	char result[BUFFSIZE];
+	int iter = 4;
 	while(iter < strlen(inputBuffer) &&  inputBuffer[iter] != '\n') {
 		for(int i = 0; i < 30; i++) {
 			name[i] = inputBuffer[i];
@@ -193,7 +194,11 @@ char* compareSongs(char inputBuffer) {
 			sha[j] = inputBuffer[j];
 		}
 		iter = iter + 158;
-		
-
+		if(containsSong(sha) == 0) {
+			strcat(result,name);
+			strcat(result,":");
+			strcat(result,sha);
+		}
 	}
+	strcat(result"\n");
 }

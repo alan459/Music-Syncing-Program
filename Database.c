@@ -55,7 +55,7 @@ char** lookup_songs (char* filename) {
 * This method determines if a given sha value is contained in the
 * database for the client/server, and returns the appropriate boolean.
 **/
-bool containsSong(char* filename, char* comparedSha) {
+int containsSong(char* filename, char* comparedSha) {
   char *currentLine = (char *)  malloc(MAXIMUM_DATABASE_ENTRY_LENGTH+1);
 
   char* shaField = malloc(SECONDFIELD_LENGTH + 1);
@@ -64,10 +64,10 @@ bool containsSong(char* filename, char* comparedSha) {
   {
     shaField = strtok(NULL, ":"));
     if(strcmp(comparedSha, shaField)==0) {
-      return true;
+      return 1;
     }
   }
-  return false;
+  return 0;
 }
 
 
