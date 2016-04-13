@@ -80,14 +80,39 @@ char** lookup_songs (char* filename) {
 }
 
 
+bool containsSong(char* filename, char* comparedSha) {
+  FILE* filePointer;
+
+  if ( (filePointer = fopen(filename,"r+")) == NULL ) 
+  {
+      fprintf(stderr, "Error: Can't open file %s\n", filename);
+      exit(1);
+    }
+
+  char *currentLine = (char *)  malloc(MAXIMUM_DATABASE_ENTRY_LENGTH+1);
+
+  char* shaField = malloc(SECONDFIELD_LENGTH + 1);
+
+  while ( fgets(currentLine, MAXIMUM_DATABASE_ENTRY_LENGTH, filePointer) != NULL)
+  {
+    shaField = strtok(NULL, ":"));
+    if(strcmp(comparedSha, shaField)==0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
 int main() {
 	char* a = "database.dat";
-	addSong("newsong", "shaCode", a);
+	/*addSong("newsong", "shaCode", a);
 	char** songs = lookup_songs("database.dat");
 	int numEntries = 6;
 	for(int i = 0; i < numEntries; i++) {
 		printf("%s", songs[i]);
 	}
 	printf("%s \n", a);
-	return 0;
+	return 0;*/
+  printf("%s\n",containsSong(a, "1222") );
 }
