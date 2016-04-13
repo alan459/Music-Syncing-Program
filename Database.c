@@ -51,6 +51,19 @@ char** lookup_songs (char* filename) {
 }
 
 
+
+bool containsSong(char* filename, char* comparedSha) {
+  char *currentLine = (char *)  malloc(MAXIMUM_DATABASE_ENTRY_LENGTH+1);
+
+  char* shaField = malloc(SECONDFIELD_LENGTH + 1);
+
+  while ( fgets(currentLine, MAXIMUM_DATABASE_ENTRY_LENGTH, filePointer) != NULL)
+  {
+    shaFiel
+  }
+}
+
+
 /**
 * Takes song name and SHA as a parameter.
 * Adds a song and SHA to the end of the file.

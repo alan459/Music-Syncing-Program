@@ -180,3 +180,20 @@ int findSecondSpace(const char *str)
 
 	return spacePos;
 }
+
+char* compareSongs(char inputBuffer) {
+	char name[30];
+	char sha[128];
+	int iter = 4;;
+	while(iter < strlen(inputBuffer) &&  inputBuffer[iter] != '\n') {
+		for(int i = 0; i < 30; i++) {
+			name[i] = inputBuffer[i];
+		}
+		for(int j = 30; j < 158; j++) {
+			sha[j] = inputBuffer[j];
+		}
+		iter = iter + 158;
+		
+
+	}
+}
