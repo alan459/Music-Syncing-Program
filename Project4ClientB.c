@@ -8,6 +8,8 @@
 #define BYEVersion "CS332 "
 #define BYEType "BYE "
 
+
+
 /* function declarations */
 
 /*
@@ -188,20 +190,45 @@ int findSecondSpace(const char *str)
 **/
 char* compareSongs(char* inputBuffer) 
 {
+	// allocate a variable for names in the buffer
 	char name[30];
+
+	//allocat a variable for sha in the buffer
 	char sha[128];
 
-	int iter = 4; // skip first 4 characters denoting messages type (like LIST)
-	while(iter < strlen(inputBuffer) &&  inputBuffer[iter] != '\n') 
-	{
-		for(int i = 0; i < 30; i++) {
-			name[i] = inputBuffer[i];
-		}
-		for(int j = 30; j < 158; j++) {
-			sha[j] = inputBuffer[j];
-		}
-		iter = iter + 158;
-		
+	// generically allocated output buffer
+	char result[BUFFSIZE];
 
+	// move input buffer pointer past message type to start of first song
+	inputBuffer += 4;
+
+	// go through the entire input buffer
+	while(inputBuffer[0] == '\0') 
+	{
+		// Retrieve next Name 1 character at a time
+		strncpy(name, inputBuffer, 30);
+
+		// move input buffer pointer to start of next SHA
+		inputBuffer += 30;
+
+		//Retrieve next SHA
+		strncpy(sha, inputBuffer, 128);
+
+		// move input buffer pointer past SHA to start of next song
+		inputBuffer += 128;
+
+		// if the song is not found in the database, add it to output buffer
+		if(containsSong(sha) == 0) 
+		{
+			strcat(result,name);
+			strcat(result,":");
+			strcat(result,sha);
+			strcat(result,"\n");
+		}
 	}
+
+	//null terminate the buffer
+	strcat(result, "\0");
+
 }
+
