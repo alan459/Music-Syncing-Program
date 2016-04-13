@@ -48,6 +48,8 @@ char** lookup_songs (int* no_of_entries)
          break; 
       }
 
+      secondField[SECONDFIELD_LENGTH] = '\0';
+      
       // allocate space for a song and SHA entry
       songList[*no_of_entries] = (char *) malloc(FIRSTFIELD_LENGTH + SECONDFIELD_LENGTH + 2); 
 
