@@ -218,5 +218,5 @@ char* compareSongs(char* inputBuffer) {
 		}
 	}
 	//null terminate the buffer
-	strcat(result"\0");
+	strcat(result,"\0");
 }
