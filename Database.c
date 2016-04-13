@@ -2,8 +2,8 @@
 #include "WhoHeader.h"
 
 #define MAXIMUM_DATABASE_ENTRY_LENGTH 158
-#define FIRSTFIELD_LENGTH 30
-#define SECONDFIELD_LENGTH 128
+#define SONG_LENGTH 30
+#define SHA_LENGTH 128
 #define MAX_NUM_RECORDS 100
 
 static FILE* filePointer;
@@ -29,10 +29,10 @@ char** lookup_songs (int* no_of_entries)
   char* currentLine = (char *) malloc(MAXIMUM_DATABASE_ENTRY_LENGTH + 1);
 
   // for holding song name when going through the database
-  char* firstField = malloc(FIRSTFIELD_LENGTH + 1);
+  char* firstField = malloc(SONG_LENGTH + 1);
 
   // for holding song SHA when going through the database
-  char* secondField = malloc(SECONDFIELD_LENGTH + 1);
+  char* secondField = malloc(SHA_LENGTH + 1);
 
   // intialize the number of entries
   *no_of_entries = 0;
@@ -48,10 +48,10 @@ char** lookup_songs (int* no_of_entries)
          break; 
       }
 
-      secondField[SECONDFIELD_LENGTH] = '\0';
+      secondField[SHA_LENGTH] = '\0';
 
       // allocate space for a song and SHA entry
-      songList[*no_of_entries] = (char *) malloc(FIRSTFIELD_LENGTH + SECONDFIELD_LENGTH + 2); 
+      songList[*no_of_entries] = (char *) malloc(SONG_LENGTH + SHA_LENGTH + 2); 
 
       // add a song and its SHA to the list of entries in the array
       sprintf(songList[(*no_of_entries)++],"%s:%s", firstField, secondField);
@@ -72,7 +72,7 @@ int containsSong(char* comparedSha)
 {
   char* currentLine = (char *)  malloc(MAXIMUM_DATABASE_ENTRY_LENGTH+1);
 
-  char* shaField = malloc(SECONDFIELD_LENGTH + 1);
+  char* shaField = malloc(SHA_LENGTH + 1);
 
   while ( fgets(currentLine, MAXIMUM_DATABASE_ENTRY_LENGTH, filePointer) != NULL )
   {
@@ -121,10 +121,10 @@ char* getSongName(char* SHA)
 char* compareSongs(char* inputBuffer) 
 {
   // allocate a variable for names in the buffer
-  char name[30];
+  char name[SONG_LENGTH];
 
   //allocat a variable for sha in the buffer
-  char sha[128];
+  char sha[SHA_LENGTH];
 
   // generically allocated output buffer
   char result[BUFFSIZE];
@@ -136,16 +136,16 @@ char* compareSongs(char* inputBuffer)
   while(inputBuffer[0] == '\0') 
   {
     // Retrieve next Name 1 character at a time
-    strncpy(name, inputBuffer, 30);
+    strncpy(name, inputBuffer, SONG_LENGTH);
 
     // move input buffer pointer to start of next SHA
-    inputBuffer += 30;
+    inputBuffer += SONG_LENGTH;
 
     //Retrieve next SHA
-    strncpy(sha, inputBuffer, 128);
+    strncpy(sha, inputBuffer, SHA_LENGTH);
 
     // move input buffer pointer past SHA to start of next song
-    inputBuffer += 128;
+    inputBuffer += SHA_LENGTH;
 
     // if the song is not found in the database, add it to output buffer
     if(containsSong(sha) == 0) 
