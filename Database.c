@@ -9,7 +9,7 @@
 static FILE* filePointer;
 static char* songList[MAX_NUM_RECORDS];
 static char** nullPtr = NULL;
-static int* numEntries;
+static int* no_of_entries;
 
 void open_database ( char *filename) {
   if ( (filePointer = fopen(filename,"r+")) == NULL ) {
@@ -30,7 +30,7 @@ char** lookup_songs (char* filename) {
   char* firstField = malloc(FIRSTFIELD_LENGTH + 1);
   char* secondField = malloc(SECONDFIELD_LENGTH + 1);
 
-  int no_of_entries = 0;
+  no_of_entries = 0;
 
   while ( fgets(currentLine, MAXIMUM_DATABASE_ENTRY_LENGTH, filePointer) !=  NULL ) 
   {
