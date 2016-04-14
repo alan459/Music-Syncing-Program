@@ -70,7 +70,34 @@ char** lookup_songs (int* no_of_entries)
 **/
 int containsSong(char* comparedSha) 
 {
-  char* currentLine = (char *)  malloc(MAXIMUM_DATABASE_ENTRY_LENGTH+1);
+  char* currentLine = (char *)  malloc(MAXIMUM_DATABASE_ENTRY_LENGTH + 1);
+
+  char* shaField = malloc(SHA_LENGTH + 1);
+
+  // loop through the lines of the database 
+  while ( fgets(currentLine, MAXIMUM_DATABASE_ENTRY_LENGTH, filePointer) != NULL )
+  {
+    strtok(currentLine, ":"); // give strtok() a reference to the current line????
+
+    shaField = strtok(NULL, ":")); // get the second field of the current line
+
+    if(strcmp(comparedSha, shaField) == 0) // if passed in SHA equals current SHA
+    {
+      return 1; // return true
+    }
+
+  }
+
+  return 0; // return false
+}
+
+
+/** 
+* Given an SHA returns a song name. 
+**/
+char* getSongName(char* SHA)
+{
+  char* currentLine = (char *)  malloc(MAXIMUM_DATABASE_ENTRY_LENGTH + 1);
 
   char* shaField = malloc(SHA_LENGTH + 1);
 
@@ -83,6 +110,8 @@ int containsSong(char* comparedSha)
   }
 
   return 0;
+
+  return "";
 }
 
 
@@ -104,13 +133,6 @@ void addSong(char* songName, char* SHA)
   fclose(append);
 }
 
-/** 
-* Given an SHA returns a song name. 
-**/
-char* getSongName(char* SHA)
-{
-  return "";
-}
 
 
 /**
