@@ -204,7 +204,6 @@ void addSong(char* songName, char* SHA)
 }
 
 
-
 /**************************************************************************************************************** 
 * Takes as a parameter the list of songs:SHA pairings to compare to our local database contents.
 *
@@ -213,46 +212,42 @@ void addSong(char* songName, char* SHA)
 char* compareSongs(char* inputBuffer) 
 {
   // allocate a variable for names in the buffer
-  char name[SONG_LENGTH];
+  char* name = malloc(SONG_LENGTH);
+  char* sha = malloc(SHA_LENGTH + 1);
 
-  //allocat a variable for sha in the buffer
-  char sha[SHA_LENGTH];
+  // string to be returned containing songs
+  char* result = malloc(BUFFSIZE);
 
-  // generically allocated output buffer
-  char result[BUFFSIZE];
-
-  // move input buffer pointer past message type to start of first song
-  inputBuffer += 4;
+  char* currentLine = malloc(SONG_LENGTH+ SHA_LENGTH + 1);
 
   // go through the entire input buffer
-  while(inputBuffer[0] == '\0') 
+  for (int i = 0; i < numEntries; i++)
   {
-    // Retrieve next Name 1 character at a time
-    strncpy(name, inputBuffer, SONG_LENGTH);
+      // retrieve the current song and sha
+      strcpy(currentLine, inputBuffer[i]);
 
-    // move input buffer pointer to start of next SHA
-    inputBuffer += SONG_LENGTH;
+      // get the name of the song only
+      name = strtok(currentLine, ":");
 
-    //Retrieve next SHA
-    strncpy(sha, inputBuffer, SHA_LENGTH);
+      // retrieve the SHA of the song
+      sha = strtok(NULL, ":");
 
-    // move input buffer pointer past SHA to start of next song
-    inputBuffer += SHA_LENGTH;
-
-    // if the song is not found in the database, add it to output buffer
-    if(containsSong(sha) == 0) 
-    {
-      strcat(result,name);
-      strcat(result,":");
-      strcat(result,sha);
-      strcat(result,"\n");
-    }
+      // if the song is not found in the database, add it to output buffer
+      if(containsSong(sha) == 0) 
+      {
+        // add song name : SHA to result to be returned
+        strcat(result, name); 
+        strcat(result, ":");
+        strcat(result, sha);
+      }
   }
 
-  //null terminate the buffer
+  // null terminate the result
   strcat(result, "\0");
 
+  return result;
 }
+
 
 
 
