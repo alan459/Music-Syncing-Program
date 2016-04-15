@@ -4,12 +4,17 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>  // For isspace
-// 
+
+//
+
+
 main()
 {
-	char* a = "ddd:ok";
+	char* a = malloc(189);
+	strcpy(a, "ddd:ok");
 	char* b = malloc(199);
-	b = strtok(a, ":");
+	strtok(a, ":");
+	b = strtok(0, ":");
     printf("Hello %s\n", b);
 
 }

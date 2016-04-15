@@ -2,7 +2,7 @@
 #include "WhoHeader.h"
 
 #define MAXIMUM_DATABASE_ENTRY_LENGTH 158
-#define SONG_LENGTH 30
+#define SONG_LENGTH 255
 #define SHA_LENGTH 128
 #define MAX_NUM_RECORDS 100
 
@@ -80,6 +80,7 @@ int containsSong(char* comparedSha)
     strtok(currentLine, ":"); // give strtok() a reference to the current line????
 
     shaField = strtok(NULL, ":")); // get the second field of the current line
+    shaField[strlen(shaField) - 1] = '\0'; // turn new line character to null 
 
     if(strcmp(comparedSha, shaField) == 0) // if passed in SHA equals current SHA
     {
@@ -91,25 +92,30 @@ int containsSong(char* comparedSha)
   return 0; // return false
 }
 
-
 /** 
 * Given an SHA returns a song name. 
+* Returns a song name corresponding to a passed in SHA or an empty string if song not found.
 **/
 char* getSongName(char* SHA)
 {
-  char* currentLine = (char *)  malloc(MAXIMUM_DATABASE_ENTRY_LENGTH + 1);
+  char* currentLine = (char *)  malloc(MAXIMUM_DATABASE_ENTRY_LENGTH+1);
+
+  char* nameField = malloc(SONG_LENGTH + 1);
 
   char* shaField = malloc(SHA_LENGTH + 1);
 
   while ( fgets(currentLine, MAXIMUM_DATABASE_ENTRY_LENGTH, filePointer) != NULL )
   {
-    shaField = strtok(NULL, ":"));
-    if(strcmp(comparedSha, shaField)==0) {
-      return 1;
+    nameField = strtok(currentLine, ":");
+
+    shaField = strtok(NULL, ":");
+    shaField[strlen(shaField) - 1] = '\0'; // turn new line character to null 
+
+    if(strcmp(SHA, shaField) == 0) 
+    {
+      return nameField;
     }
   }
-
-  return 0;
 
   return "";
 }
