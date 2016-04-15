@@ -188,8 +188,7 @@ char* getSongName(char* SHA)
 
 
 /****************************************************************************************************************
-* Takes song name and SHA as a parameter. Adds the song and SHA to the local database and array containings the 
-* entries in that database.
+* Takes song name and SHA as a paramete. Adds the song and SHA to the local database.
 * 
 * Note: Assumes a new line is at the end of the file so if a non-newline character exists at the end it will 
 * result in a combined string at the place of the addition.
@@ -202,7 +201,7 @@ void addSong(char* songName, char* SHA)
   fprintf(append, "%s:%s\n", songName, SHA); // add to end of file
   fclose(append); // close to file pointer
 
-  // allocate space for a song and SHA entry in the classwide array
+  // allocate space for a song and SHA entry in the classwide variable
   songList[numEntries] = (char *) malloc(SONG_LENGTH + SHA_LENGTH + 2); 
 
   // add a song and its SHA to the list of entries in the classwide variable
@@ -259,5 +258,14 @@ char* compareSongs(char* inputBuffer)
 
 
 
+main()
+{
+  open_database("database.dat");
+  addSong("Song6", "12345611111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222212345");
+  printf("Songs:\n");
+  for (int i = 0; i < numEntries; i++)
+  {
+    printf("%s\n", songList[i]);
+  }
 
-
+}
