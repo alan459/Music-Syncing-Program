@@ -1,5 +1,6 @@
 
 #include "WhoHeader.h"
+#include "NetworkHeader.h"
 
 /* Classwide constants */
 #define MAXIMUM_DATABASE_ENTRY_LENGTH 158
