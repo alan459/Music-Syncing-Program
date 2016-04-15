@@ -15,18 +15,54 @@
 static FILE* filePointer;
 static char* songList[MAX_NUM_RECORDS];
 static char** nullPtr = NULL;
-static int* numEntries;
+static int numEntries;
+
+char** lookup_songs (int* no_of_entries);
+
+void getFields(char* line, char* songLocation, char* shaLocation)
+{
+  songLocation = strtok(line, ":");
+  shaLocation = strtok(NULL, ":");
+}
 
 void open_database ( char *filename) {
   if ( (filePointer = fopen(filename,"r+")) == NULL ) {
     fprintf(stderr, "Error: Can't open file %s\n", filename);
     exit(1);
   }
+
+  lookup_songs(&numEntries);
+
+
+}
+
+void printSongs(char* list[MAX_NUM_RECORDS], int num)
+{
+  char* song = malloc(SONG_LENGTH + 1);
+  char* sha = malloc(SHA_LENGTH + 1);
+
+ /* for(int i = 0; i < num; i++)
+  {
+    song = strtok(list[i], ":");
+    sha = strtok(NULL, ":");
+    printf("Song : %s\tSHA : %s\n", song, sha);
+  }*/
+  for(int i = 0; i < num; i++)
+  {
+
+    printf("Song : %s\n", list[i]);
+  }
 }
 
 void close_database() 
 {
   fclose(filePointer);
+  for (int i = 0; i < numEntries; i++)
+  {
+    free(songList[i]);
+  }
+  //free(songList);
+  numEntries = 0;
 }
 
 
@@ -38,29 +74,26 @@ void close_database()
 **/
 char** lookup_songs (int* no_of_entries) 
 {
-  printf("line 41\n");
+  //printf("line 41\n");
   char* currentLine = (char *) malloc(MAXIMUM_DATABASE_ENTRY_LENGTH + 1);
-  printf("43\n");
+
   // for holding song name when going through the database
   char* firstField = malloc(SONG_LENGTH + 1);
-printf("46\n");
+
   // for holding song SHA when going through the database
   char* secondField = malloc(SHA_LENGTH + 1);
-printf("49\n");
+
   // intialize the number of entries
   *no_of_entries = 0;
-  printf("line 52\n");
+
   // loop through the entries on each line of the database until null is encountered
   while ( fgets(currentLine, MAXIMUM_DATABASE_ENTRY_LENGTH, filePointer) !=  NULL ) 
   { 
-      printf("in while loop\n");
       // retrieve the name of the song
       firstField = strtok(currentLine, ":");
 
       // retrieve the SHA of the song
-      if (( secondField = strtok(NULL, ":")) == NULL) {
-         break; 
-      }
+      secondField = strtok(NULL, ":");
 
       secondField[SHA_LENGTH] = '\0';
 
@@ -79,29 +112,34 @@ printf("49\n");
 
 
 /*
-* Takes filename and SHA value as parameters and determines if the database contains that file
+* Takes filename and SHA value as parameters and determines if the local database contains that file
 * and returns 1 if true and 0 if false.
 **/
 int containsSong(char* comparedSha) 
 {
   char* currentLine = (char *)  malloc(MAXIMUM_DATABASE_ENTRY_LENGTH + 1);
-
+  //char* currentLine = malloc(SHA_LENGTH + SONG_LENGTH + 1);
   char* shaField = malloc(SHA_LENGTH + 1);
 
-  // loop through the lines of the database 
-  while ( fgets(currentLine, MAXIMUM_DATABASE_ENTRY_LENGTH, filePointer) != NULL )
-  {
-    strtok(currentLine, ":"); // give strtok() a reference to the current line????
 
-    shaField = strtok(NULL, ":"); // get the second field of the current line
-    shaField[strlen(shaField) - 1] = '\0'; // turn new line character to null 
+  for (int i = 0; i < numEntries; i++) 
+  {
+    // get current song and sha
+    strcpy(currentLine, songList[i]);
+
+    // break the current line to prepare to get the sha
+    strtok(currentLine, ":"); 
+
+    shaField = strtok(0, ":"); // get the second field of the current line
+
+    shaField[SHA_LENGTH] = '\0'; // turn new line character to null 
 
     if(strcmp(comparedSha, shaField) == 0) // if passed in SHA equals current SHA
     {
       return 1; // return true
     }
-
   }
+
 
   return 0; // return false
 }
@@ -116,37 +154,35 @@ char* compareSongs(char** inputBuffer, int numEntries)
 {
   // allocate a variable for names in the buffer
   char* name = malloc(SONG_LENGTH);
-  char* sha = malloc(SHA_LENGTH);
+  char* sha = malloc(SHA_LENGTH + 1);
 
   // string to be returned containing songs
   char* result = malloc(BUFFSIZE);
 
-  // move input buffer pointer past message type to start of first song
-  //inputBuffer += 4;
-  printf("point 1\n");
+  char* currentLine = malloc(SONG_LENGTH+ SHA_LENGTH + 1);
 
   // go through the entire input buffer
   for (int i = 0; i < numEntries; i++)
   {
+      // retrieve the current song and sha
+      strcpy(currentLine, inputBuffer[i]);
 
-      // retrieve the name of the song
-      name = strtok(inputBuffer[i], ":");
+      // get the name of the song only
+      name = strtok(currentLine, ":");
 
       // retrieve the SHA of the song
       sha = strtok(NULL, ":");
 
-      printf("iteration %d\n", i);
+      // if the song is not found in the database, add it to output buffer
+      if(containsSong(sha) == 0) 
+      {
+        // add song name : SHA to result to be returned
+        strcat(result, name); 
+        strcat(result, ":");
+        strcat(result, sha);
 
-    // if the song is not found in the database, add it to output buffer
-    if(containsSong(sha) == 0) 
-    {
-      // add song name : SHA to result to be returned
-      strcat(result, name); 
-      strcat(result, ":");
-      strcat(result, sha);
-
-      strcat(result, "\n");
-    }
+        // strcat(result, "\n");
+      }
   }
 
   // null terminate the buffer
@@ -161,18 +197,23 @@ main()
 {
 	
   open_database("compare.dat");
-  int* num;
-  printf("opened\n");
-  int* rrr;
-  char** songList = lookup_songs(rrr);  
-  printf("b4 close\n");
+  char* outerDatabase[MAX_NUM_RECORDS];
+
+  for (int i = 0; i < numEntries; i++)
+  {
+    outerDatabase[i] = malloc(MAXIMUM_DATABASE_ENTRY_LENGTH  + 1);
+    strcpy(outerDatabase[i], songList[i]);
+    //printf("%s\n", outerDatabase[i]);
+  } 
+  int numOuter = numEntries;
+
   close_database();
-  printf("closed\n");
-
   open_database("database.dat");
-  char* result  = compareSongs(songList, *rrr);
 
-	//char* d  = "ff";
-  printf("Hello %s\n", result);
+  char* result  = compareSongs(outerDatabase, numOuter);
+
+  printf("\nRESULTS: \n\n%s\n", result);
+
+
 
 }
