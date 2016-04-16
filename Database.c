@@ -13,7 +13,7 @@ static FILE* filePointer;
 static char* songList[MAX_NUM_RECORDS]; // list of song:sha pairings in local database
 static int numEntries; // number of entries in local database
 static char** nullPtr = NULL;
-
+static int i;
 
 /* Function Declerations */
 
@@ -27,6 +27,11 @@ char** lookup_songs (int* no_of_entries);
 /* Takes filename and SHA value as parameters and determines if the database contains that file
 *  and returns 1 if true and 0 if false. */
 int containsSong(char* comparedSha);
+
+
+/* Takes filename and SHA value as parameters and determines if the database contains that file
+*  and returns 1 if true and 0 if false. */
+int listContainsSong(char* comparedSha, char* inputBuffer);
 
 /* Given an SHA returns a song name based on SHA to song name mappings in the local database. */
 char* getSongName(char* SHA);
@@ -66,7 +71,7 @@ void open_database(char* filename)
 void close_database() 
 {
   fclose(filePointer);
-  for (int i = 0; i < numEntries; i++)
+  for (i = 0; i < numEntries; i++)
   {
     free(songList[i]);
   }
@@ -130,7 +135,7 @@ int containsSong(char* comparedSha)
   char* shaField = malloc(SHA_LENGTH + 1);
 
   // loop through the list of song:SHA pairings in the local database
-  for (int i = 0; i < numEntries; i++) 
+  for (i = 0; i < numEntries; i++) 
   {
     // get current song and sha into a temporary variable
     strcpy(currentLine, songList[i]);
@@ -152,6 +157,7 @@ int containsSong(char* comparedSha)
 }
 
 
+
 /****************************************************************************************************************
 * Given an SHA returns a song name based on SHA to song name mappings in the local database. 
 ****************************************************************************************************************/
@@ -164,7 +170,7 @@ char* getSongName(char* SHA)
   char* shaField = malloc(SHA_LENGTH + 1);
 
   // loop through the list of song:SHA pairings in the local database
-  for (int i = 0; i < numEntries; i++) 
+  for (i = 0; i < numEntries; i++) 
   {
     // get current song and sha into a temporary variable
     strcpy(currentLine, songList[i]);
@@ -200,7 +206,7 @@ void addSong(char* songName, char* SHA)
   fseek(append, 0, SEEK_END); // get to the end of the file
 
   fprintf(append, "%s:%s\n", songName, SHA); // add to end of file
-  fclose(append); // close to file pointer
+  fclose(append); // close the file pointer
 
   // allocate space for a song and SHA entry in the classwide array
   songList[numEntries] = (char *) malloc(SONG_LENGTH + SHA_LENGTH + 2); 
@@ -216,7 +222,7 @@ void addSong(char* songName, char* SHA)
 *
 * Returns a list of songs:SHA pairings of files not stored on our local database based on SHA values. 
 ****************************************************************************************************************/
-char* compareSongs(char* inputBuffer) 
+char* compareSongsToClient(char** inputBuffer) 
 {
   // allocate a variable for names in the buffer
   char* name = malloc(SONG_LENGTH);
@@ -228,7 +234,7 @@ char* compareSongs(char* inputBuffer)
   char* currentLine = malloc(SONG_LENGTH+ SHA_LENGTH + 1);
 
   // go through the entire input buffer
-  for (int i = 0; i < numEntries; i++)
+  for (i = 0; i < numEntries; i++)
   {
       // retrieve the current song and sha
       strcpy(currentLine, inputBuffer[i]);
@@ -257,7 +263,81 @@ char* compareSongs(char* inputBuffer)
 
 
 
+/**************************************************************************************************************** 
+* Takes as a parameter the list of songs:SHA pairings to compare to our local database contents.
+*
+* Returns a list of songs:SHA pairings of files not stored on the server database based on SHA values. 
+****************************************************************************************************************/
+char* compareSongsToServer(char** inputBuffer) 
+{
+  // allocate a variable for names in the buffer
+  char* name = malloc(SONG_LENGTH);
+  char* sha = malloc(SHA_LENGTH + 1);
+
+  // string to be returned containing songs
+  char* result = malloc(BUFFSIZE);
+
+  char* currentLine = malloc(SONG_LENGTH+ SHA_LENGTH + 1);
+
+  // go through the entire input buffer
+  for (i = 0; i < numEntries; i++)
+  {
+      // retrieve the current song and sha
+      strcpy(currentLine, inputBuffer[i]);
+
+      // get the name of the song only
+      name = strtok(currentLine, ":");
+
+      // retrieve the SHA of the song
+      sha = strtok(NULL, ":");
+
+      // if the song is not found in the database, add it to output buffer
+      if(containsSong(sha) == 0) 
+      {
+        // add song name : SHA to result to be returned
+        strcat(result, name); 
+        strcat(result, ":");
+        strcat(result, sha);
+      }
+  }
+
+  // null terminate the result
+  strcat(result, "\0");
+
+  return result;
+}
 
 
+/* Takes filename and SHA value as parameters and determines if the database contains that file
+*  and returns 1 if true and 0 if false. */
+int listContainsSong(char* comparedSha, char** inputBuffer)
+{
+  // for holding the current song:SHA pairing to be broken apart by strtok()
+  char* currentLine = (char *)  malloc(MAXIMUM_DATABASE_ENTRY_LENGTH + 1);
+
+  // for holding the current SHA retrieved by breaking apart the song:SHA pairing with strtok()
+  char* shaField = malloc(SHA_LENGTH + 1);
+
+  // loop through the list of song:SHA pairings in the local database
+  for (i = 0; i < numEntries; i++) 
+  {
+    // get current song and sha into a temporary variable
+    strcpy(currentLine, songList[i]);
+
+    // break the current line along the ':' to prepare to get the SHA
+    strtok(currentLine, ":"); 
+
+    shaField = strtok(0, ":"); // get the second field of the current line
+
+    shaField[SHA_LENGTH] = '\0'; // turn new line character to null 
+
+    if(strcmp(comparedSha, shaField) == 0) // if passed in SHA equals current SHA
+    {
+      return 1; // return true
+    }
+  }
+
+  return 0; // return false
+}
 
 
