@@ -3,10 +3,7 @@
 #include "NetworkHeader.h"
 #include "WhoHeader.h"
 
-const char LISTType[] = "LIST";
-const char PULLType[] = "PULL";
-const char PUSHType[] = "PUSH";
-const char LEAVEType[] = "LEAV";
+void getSong(char* songName, char* song, int* numBytes);
 
 void HandleProj4Client(int cliSock, char *databaseName)
 {
@@ -14,6 +11,10 @@ void HandleProj4Client(int cliSock, char *databaseName)
 	// receive message from client
 	char rcvMessage[BUFFSIZE]; // Buffer for received message
 	rcvMessage[0] = '\0'; // initialize to empty C-string
+	int retrievedLength = 0; // boolean representing whether we have retrieved value from length field
+	char lengthOfMessage[3]; // 2 byte field contains length of message (does not count type field)
+	unsigned long length_Message = 0; // lengthOfMessage in unsigned long format
+	int totalBytesRcvd = 0; // total number of bytes received
 	for (;;)
 	{
 		//printf("Entered infinite loop\n"); // debugging
@@ -26,15 +27,30 @@ void HandleProj4Client(int cliSock, char *databaseName)
 		else if (numBytesRcvd == 0)
 			DieWithError("recv() failed: connection closed prematurely");
 		buffer[numBytesRcvd] = '\0'; // append null-character
-		strcat(rcvMessage, buffer); // append the received buffer to ackMessage
+		strcat(rcvMessage, buffer); // append the received buffer to rcvMessage
 
-		// if new-line character is received, exit the loop
-		if (buffer[numBytesRcvd-1] == '\n')
+		// retrieve the length field from message. (located 4th-5th bytes)
+		if (!retrievedLength && numBytesRcvd >= 6)
 		{
-			//printf("new-line char received\n"); // debugging
+			lengthOfMessage[1] = rcvMessage[5];
+			lengthOfMessage[0] = rcvMessage[4];
+			lengthOfMessage[3] = '\0';
+			length_Message = strtoul(lengthOfMessage, NULL, 2);
+			//printf("length of message: %lu\n", length_Message); // DEBUGGING
+
+			retrievedLength = 1;
+		}
+
+		// update totalBytesRcvd;
+		totalBytesRcvd = totalBytesRcvd + numBytesRcvd;
+
+		// if message received is length_Message long, exit the loop
+		// 4 for type field, 2 for length field
+		if (totalBytesRcvd == 4 + 2 + length_Message)
+		{
 			break;
 		}
-		//printf("end\n"); // debugging
+
 	}
 
 	// Check the message type (first 4 bytes in the message)
@@ -69,12 +85,11 @@ void HandleProj4Client(int cliSock, char *databaseName)
 		int i;
 		for (i = 0; i < numEntries; i++)
 		{
-			printf("ENTEREEDDDDDDDDDDDD\n");
 			char** oneSong = songs+i;
 			
 			// find the first occurence of ':'
 			int k; int firstIndex;
-			for (k = 0; k < 31; k++) // at most 30 characters before first ':'
+			for (k = 0; k < MAX_SONGNAME_LENGTH+1; k++) // at most MAX_SONGNAME_LENGTH characters before first ':'
 			{
 				if ((*oneSong)[k] == ':')
 				{
@@ -84,69 +99,112 @@ void HandleProj4Client(int cliSock, char *databaseName)
 			}
 			
 			// retrieve song name
-			char songName[31];
+			char songName[MAX_SONGNAME_LENGTH+1];
 			strncpy(songName, (*oneSong), firstIndex);
 			// append null characters for the rest of songName
 			int r;
-			for (r = 30; r >= firstIndex; r--)
+			for (r = MAX_SONGNAME_LENGTH; r >= firstIndex; r--)
 			{
 				songName[r] = '\0';
 			}
 			//printf("songName: %s\n", songName); // debugging
 
 			// retrieve SHA 
-			char sha[129];
+			char sha[SHA_LENGTH+1];
 			strcpy(sha, (*oneSong)+firstIndex+1);
 			//printf("SHA: %s\n", sha); // debugging
 
 			// store song name in listResponse packet
 			int j;
-			for (j = 0; j < 30; j++) // 30 bytes used for song name
+			for (j = 0; j < MAX_SONGNAME_LENGTH; j++) // 30 bytes used for song name
 			{
-				listResponse[4+i*158+j] = songName[j]; // 4 bytes for "LIST"
+				listResponse[4 + 2 + i*(MAX_SONGNAME_LENGTH+SHA_LENGTH) + j] = songName[j]; // 4 bytes for "LIST", 2 bytes for length field
 				//printf("character appended: %c\n", userName[j]); // debugging
 			}
 
 			// store SHA listResponse packet
 			int y;
-			for (y = 0; y < 128; y++) // 128 bytes used for SHA
+			for (y = 0; y < SHA_LENGTH; y++) // 128 bytes used for SHA
 			{
-				listResponse[4+i*158+30+y] = sha[y]; // 4 bytes for "LIST"
+				listResponse[4 + 2 + i*(MAX_SONGNAME_LENGTH+SHA_LENGTH) + MAX_SONGNAME_LENGTH + y] = sha[y]; // 4 bytes for "LIST", 2 bytes for length field
 				printf("character appended: %c\n", sha[y]); // debugging
 			}
 
 
 		}
 
-		/*debugging
+		/*//debugging
 		printf("sent: ");
 		int k;
-		for (k = 0; k < 320; k++) // 4 bytes for LIST and 2*158 bytes for 2 songs
+		for (k = 0; k < 4 + 2*(MAX_SONGNAME_LENGTH+SHA_LENGTH); k++) // 4 bytes for LIST and 2*158 bytes for 2 songs
 		{
 			printf("%c", listResponse[k]);
 		}
-		printf("\n"); */
+		printf("\n");*/
 
-		ssize_t numBytesSent = send(cliSock, listResponse, strlen(listResponse), 0);
+		// fill length field in 4th-5th of listResponse packet
+		listResponse[5] = numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH);
+		listResponse[4] = numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH) >> 8;
+		
+		char length[3];
+		length[1] = numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH);
+		length[0] = numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH) >>8;
+		length[2] = '\0';
+		printf("length of listResponse: %lu\n", strtoul(length, NULL, 2);
+
+		int length_response = 4 + 2 + numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH); // length of response packet
+
+		ssize_t numBytesSent = send(cliSock, listResponse, length_response, 0);
+		if (numBytesSent < 0)
+		{
+			DieWithError("send() failed");
+		}
+
+		//close_database(); // close database
 	}
-}
 
 
-/*
 	// Received PULL message
 	// PULL message contains message type and SHA (128 bytes).
 	else if (strcmp(typeField, PULLType) == 0)
 	{
-		char pullResponse[BUFFSIZE];
-		strcpy(pullResponse, PULLType);
-
 		// retrieve SHA from PULL message
-		char SHA[129]
-		strncpy(SHA, rcvMessage, 128);
+		char SHA[SHA_LENGTH+1];
+		strncpy(SHA, rcvMessage+4, SHA_LENGTH);
+		//printf("SHA RECEIVED: %s\n", SHA); // debugging
 
 		// get the song name corresponding to SHA
-		char songName[31];
-		songName = 
+		open_database(databaseName); // open database
+		char songName[MAX_SONGNAME_LENGTH+1] = "Name1"; // debugging
+		//songName = getSongName(SHA); FOR LATER WHEN ALAN AND ALEX ARE DONE
+		
+		// get the actual song file from current directory
+		char song[MAX_SONG_LENGTH];
+		int songSize;
+		getSong(songName, song, &songSize);
+		printf("SONG SIZE: %i\n", songSize);
+		song[songSize-2] = '\0'; // debugging
+		printf("SONG RECEIVED: %s\n", song); // debugging
+/*
+		// create response message
+		char pullResponse[MAX_SONG_LENGTH+4+1]; // extra 4 for type field, 1 for newline char
+		strcpy(pullResponse, PULLType);
+		strncpy(pullResponse, song+4, songSize);
+		pullResponse[songSize+4] = '\n'; // append newline character
+		
+		// send response to client
+		ssize_t numBytesSent = send(cliSock, pullResponse, songSize+4+1, 0);
+		if (numBytesSent < 0)
+		{
+			DieWithError("send() failed");
+		}*/
+	}
+}
+/*
+	// Received PUSH message
+	// PULL message contains message type and song file.
+	else if (strcmp(typeField, PUSHType) == 0)
+	{
 		
 	}
 
@@ -218,30 +276,25 @@ void HandleProj4Client(int cliSock, char *databaseName)
 	
 }*/
 
-
-
-/*
- * Given a string and n, returns the position in the string where n'th 
- * space character occurs.
- */ /*
-int findnthSpace(const char *str, int n)
+void getSong(char* songName, char* song, int* numBytes)
 {
-	int spaceCount = 0;
-	int spacePos = 0;
-	int i;
-	for (i = 0; i < strlen(str); i++)
+	FILE* filePointer;
+	if ( (filePointer = fopen(songName, "r+")) == NULL )
 	{
-		// space character is found
-		if (str[i] == ' ')
-			spaceCount++;
-		
-		// nth space character is found
-		if (spaceCount == n)
-		{
-			spacePos = i;
-			break;
-		}
+  	fprintf(stderr, "Error: Can't open file %s\n", songName);
+  	exit(1);
 	}
 
-	return spacePos;
-} */
+	int i = 0;
+	int c;
+	do
+	{
+    c = getc (filePointer);
+    song[i] = c;
+		i++;
+  } while (c != EOF);
+
+	*numBytes = i;
+}
+
+
