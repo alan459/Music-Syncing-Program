@@ -1,0 +1,13 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>  // For isspace
+// 
+main()
+{
+	char* a = "ddd:ok";
+	char* b = malloc(199);
+	b = strtok(a, ":");
+    printf("Hello %s\n", b);
+
+}
