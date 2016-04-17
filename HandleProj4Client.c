@@ -4,6 +4,7 @@
 #include "WhoHeader.h"
 
 void getSong(char* songName, char* song, int* numBytes);
+const char* byte_to_binary(uint8_t x, char* binary);
 
 void HandleProj4Client(int cliSock, char *databaseName)
 {
@@ -12,8 +13,7 @@ void HandleProj4Client(int cliSock, char *databaseName)
 	char rcvMessage[BUFFSIZE]; // Buffer for received message
 	rcvMessage[0] = '\0'; // initialize to empty C-string
 	int retrievedLength = 0; // boolean representing whether we have retrieved value from length field
-	char lengthOfMessage[3]; // 2 byte field contains length of message (does not count type field)
-	unsigned long length_Message = 0; // lengthOfMessage in unsigned long format
+	unsigned long length_Message = 0; // 2 byte field contains length of message (does not count type field)
 	int totalBytesRcvd = 0; // total number of bytes received
 	for (;;)
 	{
@@ -32,11 +32,13 @@ void HandleProj4Client(int cliSock, char *databaseName)
 		// retrieve the length field from message. (located 4th-5th bytes)
 		if (!retrievedLength && numBytesRcvd >= 6)
 		{
-			lengthOfMessage[1] = rcvMessage[5];
-			lengthOfMessage[0] = rcvMessage[4];
-			lengthOfMessage[3] = '\0';
-			length_Message = strtoul(lengthOfMessage, NULL, 2);
-			//printf("length of message: %lu\n", length_Message); // DEBUGGING
+
+			char firstBin[9]; char secondBin[9];
+			byte_to_binary(rcvMessage[4], firstBin);
+			byte_to_binary(rcvMessage[5], secondBin);
+			strcat(firstBin, secondBin);
+			length_Message = (unsigned long)strtoul(firstBin, NULL, 2);
+			printf("length_Message: %lu\n", length_Message); // DEBUGGING
 
 			retrievedLength = 1;
 		}
@@ -62,7 +64,7 @@ void HandleProj4Client(int cliSock, char *databaseName)
 	//printf("length: %i\n", (int)strlen(typeField)); // debugging
 
 	// Received LIST message
-	// LIST message contains nothing but the message type.
+	// LIST message contains nothing but the message type and length field (which is zero).
 	if (strcmp(typeField, LISTType) == 0)
 	{
 		char listResponse[BUFFSIZE];
@@ -143,17 +145,11 @@ void HandleProj4Client(int cliSock, char *databaseName)
 		printf("\n");*/
 
 		// fill length field in 4th-5th of listResponse packet
-		listResponse[5] = (uint_16)numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH);
-		listResponse[4] = (uint_16)numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH) >> 8;
-		
-		char length[3];
-		length[1] = numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH);
-		length[0] = numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH) >>8;
-		length[2] = '\0';
-		printf("length of listResponse: %lu\n", strtoul(length, NULL, 2));
+		listResponse[5] = (uint16_t)numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH);
+		listResponse[4] = (uint16_t)numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH) >> 8;
 
-		int length_response = 4 + 2 + numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH); // length of response packet
-
+		// send listResponse packet
+		int length_response = 4 + 2 + numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH); // length of listResponse packet
 		ssize_t numBytesSent = send(cliSock, listResponse, length_response, 0);
 		if (numBytesSent < 0)
 		{
@@ -165,18 +161,19 @@ void HandleProj4Client(int cliSock, char *databaseName)
 
 
 	// Received PULL message
-	// PULL message contains message type and SHA (128 bytes).
+	// PULL message contains message type length field (2 bytes), and SHA (128 bytes).
 	else if (strcmp(typeField, PULLType) == 0)
 	{
 		// retrieve SHA from PULL message
 		char SHA[SHA_LENGTH+1];
-		strncpy(SHA, rcvMessage+4, SHA_LENGTH);
+		strncpy(SHA, rcvMessage+6, SHA_LENGTH);
 		//printf("SHA RECEIVED: %s\n", SHA); // debugging
 
 		// get the song name corresponding to SHA
 		open_database(databaseName); // open database
-		char songName[MAX_SONGNAME_LENGTH+1] = "Name1"; // debugging
-		//songName = getSongName(SHA); FOR LATER WHEN ALAN AND ALEX ARE DONE
+		char songName[MAX_SONGNAME_LENGTH+1];
+		strcpy(songName, getSongName(SHA));
+		printf("songName: %s\n", songName); // DEBUGGING 
 		
 		// get the actual song file from current directory
 		char song[MAX_SONG_LENGTH];
@@ -296,5 +293,3 @@ void getSong(char* songName, char* song, int* numBytes)
 
 	*numBytes = i;
 }
-
-
