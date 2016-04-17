@@ -4,7 +4,7 @@
 
 /* Classwide constants */
 #define MAXIMUM_DATABASE_ENTRY_LENGTH 158
-#define SONG_LENGTH 255
+#define SONG_LENGTH 16
 #define SHA_LENGTH 128
 #define MAX_NUM_RECORDS 500
 
@@ -27,7 +27,7 @@ void open_database(char* filename)
     exit(1);
   }
 
-  lookup_songs(&numEntries);
+  intializeSongList();
 }
 
 
@@ -77,8 +77,6 @@ void intializeSongList()
 
   }
 
-  // return the location to where the contents of the local database where stored
-  return songList;
 }
 
 
@@ -322,5 +320,4 @@ int listContainsSong(char* comparedSha, char** inputBuffer)
 
   return 0; // return false
 }
-
 
