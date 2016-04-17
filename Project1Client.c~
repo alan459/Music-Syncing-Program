@@ -260,3 +260,10 @@ int skipNWords(char* cookieString, int n)
   return i;
    
 } 
+
+
+void DieWithError(char *errorMessage)
+{
+  perror(errorMessage);
+  exit(0);
+}

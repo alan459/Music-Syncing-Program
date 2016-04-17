@@ -150,13 +150,13 @@ void HandleProj4Client(int cliSock, char *databaseName)
 		listResponse[5] = (uint16_t)numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH);
 		listResponse[4] = (uint16_t)numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH) >> 8;
 
-		/* //print listResponse DEBUGGING
+		// print listResponse DEBUGGING
 		int j;
 		for (j = 0; j < 4 + 2 + numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH); j++)
 		{
 			printf("%c", listResponse[j]);
 		}
-		printf("\n");*/
+		printf("\n");
 
 		// send listResponse packet
 		int length_response = 4 + 2 + numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH); // length of listResponse packet

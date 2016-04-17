@@ -120,6 +120,7 @@ int main (int argc, char *argv[])
 				// update totalBytesRcvd;
 				totalBytesRcvd = totalBytesRcvd + numBytesRcvd;
 
+				printf("total bytes: %i\n", totalBytesRcvd);
 
 							// print listResponse DEBUGGING
 				int j;
