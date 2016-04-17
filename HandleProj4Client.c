@@ -4,10 +4,12 @@
 #include "WhoHeader.h"
 
 void getSong(char* songName, char* song, int* numBytes);
+void storeSong(char* songName, char* song, int numBytes);
 const char* byte_to_binary(uint8_t x, char* binary);
 
 void HandleProj4Client(int cliSock, char *databaseName)
 {
+
 	// printf("reached handleporj1client\n"); \\ debugging
 	// receive message from client
 	char rcvMessage[BUFFSIZE]; // Buffer for received message
@@ -161,7 +163,7 @@ void HandleProj4Client(int cliSock, char *databaseName)
 
 
 	// Received PULL message
-	// PULL message contains message type length field (2 bytes), and SHA (128 bytes).
+	// PULL message contains type field, length field (2 bytes), and SHA.
 	else if (strcmp(typeField, PULLType) == 0)
 	{
 		// retrieve SHA from PULL message
@@ -180,22 +182,46 @@ void HandleProj4Client(int cliSock, char *databaseName)
 		int songSize;
 		getSong(songName, song, &songSize);
 		printf("SONG SIZE: %i\n", songSize);
-		song[songSize-2] = '\0'; // debugging
-		printf("SONG RECEIVED: %s\n", song); // debugging
-/*
+		song[songSize-2] = '\0'; // append null-terminator
+		printf("SONG RECEIVED: %s\n", song); // DEBUGGING
+
 		// create response message
-		char pullResponse[MAX_SONG_LENGTH+4+1]; // extra 4 for type field, 1 for newline char
+		char pullResponse[4 + 2 + MAX_SONGNAME_LENGTH + MAX_SONG_LENGTH]; // extra 4 for type field, 2 for length field
 		strcpy(pullResponse, PULLType);
-		strncpy(pullResponse, song+4, songSize);
-		pullResponse[songSize+4] = '\n'; // append newline character
+		pullResponse[5] = (uint16_t)songSize;
+		pullResponse[4] = (uint16_t)songSize >> 8;
+		strncpy(pullResponse+4+2, songName, MAX_SONGNAME_LENGTH);
+		strncpy(pullResponse+4+2+MAX_SONGNAME_LENGTH, song, songSize);
 		
 		// send response to client
-		ssize_t numBytesSent = send(cliSock, pullResponse, songSize+4+1, 0);
+		ssize_t numBytesSent = send(cliSock, pullResponse, songSize+4+2+MAX_SONGNAME_LENGTH, 0);
 		if (numBytesSent < 0)
 		{
 			DieWithError("send() failed");
-		}*/
+		}
 	}
+
+	// Received PUSH message
+	// PUSH message contains type field, length field (2 bytes), song name, and song file.
+	else if (strcmp(typeField, PUSHType) == 0)
+	{
+		// retrieve song name
+		char songName[MAX_SONGNAME_LENGTH+1];
+		strncpy(songName, rcvMessage+4+2, MAX_SONGNAME_LENGTH);
+
+		// retrieve SHA
+		char SHA[SHA_LENGTH+1];
+		strncpy(SHA, rcvMessage+4+2+MAX_SONGNAME_LENGTH, SHA_LENGTH);
+
+		// retrieve song file
+		char song[MAX_SONG_LENGTH+1];
+		strncpy(song, rcvMessage+4+2+MAX_SONGNAME_LENGTH+SHA_LENGTH, MAX_SONG_LENGTH);
+
+		// store song in database
+		storeSong(songName, song, length_Message - MAX_SONGNAME_LENGTH - SHA_LENGTH);
+		addSong(songName, SHA);
+	}
+
 }
 /*
 	// Received PUSH message
@@ -292,4 +318,20 @@ void getSong(char* songName, char* song, int* numBytes)
   } while (c != EOF);
 
 	*numBytes = i;
+}
+
+void storeSong(char* songName, char* song, int numBytes)
+{
+	FILE* filePointer;
+	if ( (filePointer = fopen(songName, "w+")) == NULL )
+	{
+  	fprintf(stderr, "Error: Can't open file %s\n", songName);
+  	exit(1);
+	}
+
+	int i;
+	for (i = 0; i < numBytes; i++)
+	{
+		fputc(song[i], filePointer);
+	}
 }
