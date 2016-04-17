@@ -197,7 +197,7 @@ char* getSongName(char* SHA)
 void addSong(char* songName, char* SHA) 
 {
   FILE* append = filePointer;
-  fseek(append, 0, SEEK_END); // get top the end of the file
+  fseek(append, 0, SEEK_END); // get to the end of the file
 
   fprintf(append, "%s:%s\n", songName, SHA); // add to end of file
   fclose(append); // close to file pointer

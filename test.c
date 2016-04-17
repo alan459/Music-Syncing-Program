@@ -91,3 +91,66 @@ int main() {
 	printf("%s \n", a);
 	return 0;
 }
+
+
+  // Determine length of the first messsage to be sent
+  size_t echoStringLen = strlen(randString); 
+
+  // SEND the FIRST string to the server
+  ssize_t numBytes = send(cliSock, randString, echoStringLen, 0);
+
+  // CHECK if the SEND was SUCCESSFUL
+  if (numBytes < 0)
+    DieWithError("send() failed");
+  else if (numBytes != echoStringLen)
+    DieWithError("send() - sent unexpected number of bytes");
+
+
+  // Receive the response message (ack) from the server
+  fputs("Received: ", stdout); 
+   
+ // int j;
+  char buffer[BUFFSIZE]; // I/O buffer
+  /* Receive up to the buffer size (minus 1 to leave space for
+  a null terminator) bytes from the sender */
+
+  // RECIEVE the 1ST MESSAGE from server
+  numBytes = recv(cliSock, buffer, BUFFSIZE - 1, 0);
+
+  // CHECK if RECIEVE was SUCCESSFUL
+  if (numBytes < 0)
+    DieWithError("recv() failed");
+  else if (numBytes == 0)
+    DieWithError("recv(), connection closed prematurely");
+  buffer[numBytes] = '\0';
+
+  // PRINT the RECIEVED message 
+  fputs(buffer, stdout); 
+
+
+  // BYE MESSAGE to be sent back to the server
+  char message[BUFFSIZE]; 
+
+  strcpy(message, "CS332 BYE "); 
+
+  // extract the cookie from the string containing the cookie
+  char* cook = getCookie(buffer); 
+  // assuming the string contains 3 words, with the final being the cookie
+
+  // add the cookie to the message
+  strcat(message, cook); 
+  strcat(message, "\n");
+
+  // LENGTH of the BYE message to be sent back to the server
+  size_t messageLength = strlen(message);
+
+  // SEND the BYE message to the server
+  ssize_t numBytes2 = send(cliSock, message, messageLength, 0);
+
+  // CHECK if SEND failed
+  if (numBytes2 < 0)
+    DieWithError("send() failed");
+  else if (numBytes2 != messageLength)
+    DieWithError("send() - sent unexpected number of bytes");
+
+  //fputc('\n', stdout); // new line to stdout
