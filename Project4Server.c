@@ -1,6 +1,20 @@
 // Kyong Lee
 
 #include "NetworkHeader.h"
+//Add this one to the Network Header eventually
+#include <pthread.h>
+
+static char* databaseName;
+
+void *ThreadMain(void *arg);  //Main method of a thread
+
+
+//Structure of arguments to pass to a client thread
+struct ThreadArgs {
+  int clntSock; //Socket descriptor for a client
+};
+
+
 
 int main (int argc, char *argv[])
 {
@@ -10,7 +24,9 @@ int main (int argc, char *argv[])
     exit(1);
   } 
 
-  char* databaseName = argv[4]; // Database
+  //Changed this from char* to handle the potential problems putting in 
+  //the struct, 
+  databaseName = argv[4]; // Database
 	//printf("database input: %s\n", databaseName); // debugging
   in_port_t servPort = atoi(argv[2]); // Local port
 
@@ -47,9 +63,39 @@ int main (int argc, char *argv[])
 
     // clntSock is connected to a client
 
-    HandleProj4Client(clntSock, databaseName);
+    //Create seperate memory for client argument
+    struct ThreadArgs *threadArgs = (struct ThreadArgs *) = malloc(sizeof(struct ThreadArgs));
+    if(threadArgs == NULL) 
+      DieWithError("malloc() failed");
+    threadArgs->clntSock = clntSock;
+    threadArgs->databaseName = databaseName;
+
+    //Create client thread
+    pthread_t threadID;
+      int returnValue = pthread_create(&threadID, NULL, ThreadMain, threadArgs);
+    if(returnValue != 0)
+        DieWithError("pthread_create failed");
+
+    //HandleProj4Client(clntSock, databaseName);
 
   }
 
   return 0;
 }
+
+
+//Deallocates the thread after completion.
+void *ThreadMain(void *threadArgs) {
+    //Guarantees that thread resources are deallocated upon return
+    pthread_detach(pthread_self());
+
+    //Extract socket file descriptor from argument
+    int clntSock = ((struct ThreadArgs *)threadArgs) -> clntSock;
+    char* databaseName = ((struct ThreadArgs *)threadArgs) ->databaseName;
+    free(threadArgs); //Deallocate argument memory
+
+    //Call method to handle client
+    HandleProj4Client(clntSock, databaseName);
+
+    return(NULL);
+  }
