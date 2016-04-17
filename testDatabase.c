@@ -194,6 +194,9 @@ void addSong(char* songName, char* SHA)
 }
 
 
+
+
+
 /**************************************************************************************************************** 
 * Takes as a parameter the list of songs:SHA pairings to compare to our local database contents.
 *
@@ -242,6 +245,8 @@ char* compareSongsToClient(char** inputBuffer, int numBufferEntries)
 
 
 
+
+
 /**************************************************************************************************************** 
 * Takes as a parameter the list of songs:SHA pairings to compare to our local database contents.
 *
@@ -260,10 +265,10 @@ char* compareSongsToServer(char** inputBuffer, int numBufferEntries)
 
   // go through the entire input buffer
   int i;
-  for (i = 0; i < numBufferEntries; i++)
+  for (i = 0; i < numEntries; i++)
   {
       // retrieve the current song and sha
-      strcpy(currentLine, inputBuffer[i]);
+      strcpy(currentLine, songList[i]);
 
       // get the name of the song only
       name = strtok(currentLine, ":");
@@ -321,6 +326,15 @@ int listContainsSong(char* comparedSha, char** inputBuffer, int numBufferEntries
   return 0; // return false
 }
 
+/* takes in song name 
+find out in databse contains song of the same name
+*/
+
+int fileExists(char* fileName)
+{
+
+}
+
 
 main() {
 
@@ -340,7 +354,7 @@ main() {
     strcpy(databaseSongs[i], *(ptr + i));
     printf("%s\n", databaseSongs[i]);
   }
- close_database();
+  close_database();
 
   open_database("compare.dat");
 
@@ -348,17 +362,17 @@ main() {
   char** ptr2 = lookup_songs(&num2);
 
   printf("\nPTR2\n");
-  for(int i = 0; i <= num2; i++)
+  for(int i = 0; i < num2; i++)
   {
     printf("%s\n", ptr2[i]);
   }
   
   //printf("%s\n", databaseSongs[0]);
   //printf("%s\n", *ptr);
-  /*char* compareA = compareSongsToClient(databaseSongs, numSongs);
+  char* compareA = compareSongsToClient(databaseSongs, numSongs);
   printf("Comparison A :\n %s\n", compareA);
   char* compareB = compareSongsToServer(databaseSongs, numSongs);
-  printf("Comparison B :\n %s\n", compareB);*/
+  printf("Comparison B :\n %s\n", compareB);
   close_database();
 
 }
