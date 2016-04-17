@@ -326,13 +326,36 @@ int listContainsSong(char* comparedSha, char** inputBuffer, int numBufferEntries
   return 0; // return false
 }
 
-/* takes in song name 
-find out in databse contains song of the same name
+/* 
+Takes in song name find out in database contains song of the same name.
 */
-
 int fileExists(char* fileName)
 {
+  // for holding the current song:SHA pairing to be broken apart by strtok()
+  char* currentLine = (char *)  malloc(MAXIMUM_DATABASE_ENTRY_LENGTH + 1);
 
+  // for holding the current SHA retrieved by breaking apart the song:SHA pairing with strtok()
+  char* songName = malloc(SONG_LENGTH + 1);
+
+  // loop through the list of song:SHA pairings in the local database
+  int i;
+  for (i = 0; i < numEntries; i++) 
+  {
+    // get current song and sha into a temporary variable
+    strcpy(currentLine, songList[i]);
+
+    // break the current line along the ':' to prepare to get the song
+    songName = strtok(currentLine, ":"); 
+
+    songName[SONG_LENGTH] = '\0'; // null terminate
+
+    if(strcmp(filename, songName) == 0) // if passed in SHA equals current SHA
+    {
+      return 1; // return true
+    }
+  }
+
+  return 0; // return false
 }
 
 
