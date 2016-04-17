@@ -39,5 +39,9 @@ char* compareSongsToClient(char** inputBuffer, int numBufferEntries);
 *  Returns a list of songs:SHA pairings of files not stored on the server database based on SHA values. */
 char* compareSongsToServer(char** inputBuffer, int numBufferEntries);
 
+/* Takes in song name find out in database contains song of the same name. */
+int fileExists(char* fileName);
+
+
 /* End Function Declerations */
 

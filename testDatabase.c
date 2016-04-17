@@ -4,7 +4,7 @@
 
 /* Classwide constants */
 #define MAXIMUM_DATABASE_ENTRY_LENGTH 158
-#define SONG_LENGTH 16
+#define SONG_LENGTH 255
 #define SHA_LENGTH 128
 #define MAX_NUM_RECORDS 500
 
@@ -349,7 +349,7 @@ int fileExists(char* fileName)
 
     songName[SONG_LENGTH] = '\0'; // null terminate
 
-    if(strcmp(filename, songName) == 0) // if passed in SHA equals current SHA
+    if(strcmp(fileName, songName) == 0) // if passed in SHA equals current SHA
     {
       return 1; // return true
     }
@@ -365,10 +365,13 @@ main() {
   int numSongs = 0;
   char** ptr = lookup_songs(&numSongs);
 
+  int exists = fileExists("Name1111");
+  printf("%d\n", exists);
+
   /*for (int i = 0; i < numEntries; i++)
   {
     printf("%s\n", *(ptr + i));
-  }*/
+  }
 
   char* databaseSongs[MAX_NUM_RECORDS];
   for(int i = 0; i < numSongs; i++)
@@ -395,7 +398,7 @@ main() {
   char* compareA = compareSongsToClient(databaseSongs, numSongs);
   printf("Comparison A :\n %s\n", compareA);
   char* compareB = compareSongsToServer(databaseSongs, numSongs);
-  printf("Comparison B :\n %s\n", compareB);
+  printf("Comparison B :\n %s\n", compareB);*/
   close_database();
 
 }

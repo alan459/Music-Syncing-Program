@@ -4,7 +4,7 @@
 
 /* Classwide constants */
 #define MAXIMUM_DATABASE_ENTRY_LENGTH 158
-#define SONG_LENGTH 16
+#define SONG_LENGTH 255
 #define SHA_LENGTH 128
 #define MAX_NUM_RECORDS 500
 
@@ -328,6 +328,7 @@ int listContainsSong(char* comparedSha, char** inputBuffer, int numBufferEntries
   return 0; // return false
 }
 
+
 /****************************************************************************************************************
 * Takes in song name find out in database contains song of the same name.
 ****************************************************************************************************************/
@@ -351,7 +352,7 @@ int fileExists(char* fileName)
 
     songName[SONG_LENGTH] = '\0'; // null terminate
 
-    if(strcmp(filename, songName) == 0) // if passed in SHA equals current SHA
+    if(strcmp(fileName, songName) == 0) // if passed in SHA equals current SHA
     {
       return 1; // return true
     }
