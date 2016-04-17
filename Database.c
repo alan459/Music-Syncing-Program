@@ -46,12 +46,7 @@ void close_database()
 }
 
 
-/****************************************************************************************************************
-* Takes as a parameter a location in which to store the number of files in the database.
-*
-* Returns an array containing the song names in the database and their corresponding SHAs
-****************************************************************************************************************/
-char** lookup_songs (int* no_of_entries) 
+void intializeSongList()
 {
   char* currentLine = (char *) malloc(MAXIMUM_DATABASE_ENTRY_LENGTH + 1);
 
@@ -62,7 +57,7 @@ char** lookup_songs (int* no_of_entries)
   char* secondField = malloc(SHA_LENGTH + 1);
 
   // intialize the number of entries
-  *no_of_entries = 0;
+  numEntries = 0;
 
   // loop through the entries on each line of the database until null is encountered
   while (fgets(currentLine, MAXIMUM_DATABASE_ENTRY_LENGTH, filePointer) !=  NULL ) 
@@ -75,12 +70,27 @@ char** lookup_songs (int* no_of_entries)
       secondField[SHA_LENGTH] = '\0';
 
       // allocate space for a song and SHA entry in the classwide variable
-      songList[*no_of_entries] = (char *) malloc(SONG_LENGTH + SHA_LENGTH + 2); 
+      songList[numEntries] = (char *) malloc(SONG_LENGTH + SHA_LENGTH + 2); 
 
       // add a song and its SHA to the list of entries in the classwide variable
-      sprintf(songList[(*no_of_entries)++],"%s:%s", firstField, secondField);
+      sprintf(songList[(numEntries)++],"%s:%s", firstField, secondField);
 
   }
+
+  // return the location to where the contents of the local database where stored
+  return songList;
+}
+
+
+/****************************************************************************************************************
+* Takes as a parameter a location in which to store the number of files in the database.
+*
+* Returns an array containing the song names in the database and their corresponding SHAs
+****************************************************************************************************************/
+char** lookup_songs (int* no_of_entries) 
+{
+  // specify the number of songs in the list into the passed in variable
+  *no_of_entries = numEntries;
 
   // return the location to where the contents of the local database where stored
   return songList;
