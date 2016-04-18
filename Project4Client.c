@@ -102,7 +102,13 @@ int main (int argc, char *argv[])
 				else if (numBytesRcvd == 0)
 					DieWithError("recv() failed: connection closed prematurely");
 				buffer[numBytesRcvd] = '\0'; // append null-character
-				strcat(listResponse, buffer); // append the received buffer to listResponse
+				
+				// append received buffer to listResponse
+				int u;
+				for (u = totalBytesRcvd; u < totalBytesRcvd+numBytesRcvd; u++)
+				{
+					listResponse[u] = buffer[u-totalBytesRcvd];
+				}
 
 				// retrieve the length field from message. (located 4th-5th bytes)
 				if (!retrievedLength && numBytesRcvd >= 6)
@@ -120,15 +126,6 @@ int main (int argc, char *argv[])
 				// update totalBytesRcvd;
 				totalBytesRcvd = totalBytesRcvd + numBytesRcvd;
 
-
-							// print listResponse DEBUGGING
-				int j;
-				for (j = 0; j < totalBytesRcvd; j++)
-				{
-					printf("%c", listResponse[j]);
-				}
-				printf("\n");
-
 				// if message received is length_Message long, exit the loop
 				// 4 for type field, 2 for length field
 				if (totalBytesRcvd == 4 + 2 + length_Message)
@@ -138,6 +135,7 @@ int main (int argc, char *argv[])
 				}
 
 			}
+
 /*
 			// print listResponse DEBUGGING
 			int j;
@@ -145,8 +143,8 @@ int main (int argc, char *argv[])
 			{
 				printf("%c", listResponse[j]);
 			}
-			printf("\n");*/
-			/*
+			printf("\n"); */
+			
 			// print the names of the songs in the server to stdout
 			printf("Song name \t SHA\n");
 			int i;
@@ -162,7 +160,7 @@ int main (int argc, char *argv[])
 
 				// print song name and SHA
 				printf("%s \t %s\n", currentSongName, currentSHA);
-			}*/
+			}
 
 		}
 break; // DEBUGGING
