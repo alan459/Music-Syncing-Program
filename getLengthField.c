@@ -1,5 +1,8 @@
 #include <stdio.h>
 
+/**
+Takes as a parameter a pointer to the first of 2 bytes specifying length.
+**/
 int getLength(char* field)
 {
 	int message_Length = 0;
