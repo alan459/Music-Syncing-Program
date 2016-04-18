@@ -1,6 +1,6 @@
 // Kyong Lee
 
-#ifndef NETWORK_HEADER__H 
+#ifndef NETWORK_HEADER_H 
 #define NETWORK_HEADER_H
 
 #include <stdio.h>      /* for printf() and fprintf() */
@@ -28,7 +28,11 @@
 #define SHA_LENGTH 128 /* length of SHA-512 */
 #define MAX_SONG_LENGTH 65535 /* max length of song */
 
+#define NUM_BYTES_COMMAND_FIELD 4
+#define LENGTH_FIELD_BYTES 2
+
 #define LISTType "LIST"
+#define DIFFType "DIFF"
 #define PULLType "PULL"
 #define PUSHType "PUSH"
 #define LEAVEType "LEAV"
