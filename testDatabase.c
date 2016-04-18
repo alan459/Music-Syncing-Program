@@ -365,7 +365,7 @@ main() {
   int numSongs = 0;
   char** ptr = lookup_songs(&numSongs);
 
-  int exists = fileExists("Name1111");
+  int exists = fileExists("Song4");
   printf("%d\n", exists);
 
   /*for (int i = 0; i < numEntries; i++)
