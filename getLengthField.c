@@ -5,16 +5,12 @@ Takes as a parameter a pointer to the first of 2 bytes specifying length.
 **/
 int getLength(char* field)
 {
-	int message_Length = 0;
-
 	int byte1 = field[0];
 	int byte2 = field[1];
 
 	byte1 = byte1 << 8;
 
-	message_Length = byte1 + byte2;
-
-	return message_Length;
+	return byte1 + byte2;
 
 }
 /* testing code
