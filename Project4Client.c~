@@ -170,10 +170,36 @@ break; // DEBUGGING
 	// construct PULL message
 	char pullMessage[BUFFSIZE];
 	strcpy(pullMessage, PULLType);
+
+
 	// message length is SHA_LENGTH
-	pullMessage[5] = SHA_LENGTH;
-	pullMessage[4] = 0x0;
-	strcat(pullMessage, "12221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222226"); // debugging
+	pullMessage[5] = (uint16_t)SHA_LENGTH;
+	pullMessage[4] = (uint16_t)SHA_LENGTH >> 8;
+
+
+				char firstBin[17]; char secondBin[9];
+				byte_to_binary(pullMessage[4], firstBin);
+				byte_to_binary(pullMessage[5], secondBin);
+				strcat(firstBin, secondBin);
+				unsigned long length_Message = (unsigned long)strtoul(firstBin, NULL, 2);
+				printf("length_Message: %lu\n", length_Message); // DEBUGGING
+
+	// DEBUGGING
+	char tmpSHA[128] = "12221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222226";
+	int k;
+	for (k = 0; k < 128; k++)
+	{
+		pullMessage[6+k] = tmpSHA[k];
+	}
+
+	//strncat(pullMessage, "12221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222226"); // debugging
+
+	int j;
+	for (j = 0; j < 134; j++)
+	{
+		printf("%c", pullMessage[j]);
+	}
+	printf("\n");
 	
 
 	//printf("hello-message sent: %s", helloMessage); // debugging

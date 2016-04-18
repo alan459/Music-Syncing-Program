@@ -41,7 +41,7 @@ void HandleProj4Client(int cliSock, char *databaseName)
 			if (!retrievedLength && numBytesRcvd >= 6)
 			{
 
-				char firstBin[9]; char secondBin[9];
+				char firstBin[17]; char secondBin[9];
 				byte_to_binary(rcvMessage[4], firstBin);
 				byte_to_binary(rcvMessage[5], secondBin);
 				strcat(firstBin, secondBin);
@@ -58,6 +58,7 @@ void HandleProj4Client(int cliSock, char *databaseName)
 			// 4 for type field, 2 for length field
 			if (totalBytesRcvd == 4 + 2 + length_Message)
 			{
+				printf("ENTERED BREAK!\n");
 				break;
 			}
 
@@ -65,9 +66,14 @@ void HandleProj4Client(int cliSock, char *databaseName)
 
 		// Check the message type (first 4 bytes in the message)
 		char typeField[5];
-		strncpy(typeField, rcvMessage, 4); // store type field of received message
+		int i;
+		for (i = 0; i < 4; i++)
+		{
+			typeField[i] = rcvMessage[i];
+		}
+		typeField[4] = '\0';
 
-		printf("type of first message received: %s\n", typeField); // debugging
+		printf("type of message received: %s\n", typeField); // debugging
 
 		//printf("length: %i\n", (int)strlen(typeField)); // debugging
 
@@ -183,7 +189,7 @@ void HandleProj4Client(int cliSock, char *databaseName)
 			// retrieve SHA from PULL message
 			char SHA[SHA_LENGTH+1];
 			strncpy(SHA, rcvMessage+6, SHA_LENGTH);
-			//printf("SHA RECEIVED: %s\n", SHA); // debugging
+			printf("SHA RECEIVED: %s\n", SHA); // debugging
 
 			// get the song name corresponding to SHA
 			open_database(databaseName); // open database
