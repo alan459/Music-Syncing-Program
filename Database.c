@@ -112,8 +112,6 @@ int containsSong(char* comparedSha)
   int i;
   for (i = 0; i < numEntries; i++) 
   {
-    printf("j %d %s\n", i, songList[i]);
-
     // get current song and sha into a temporary variable
     strcpy(currentLine, songList[i]);
 
@@ -123,7 +121,6 @@ int containsSong(char* comparedSha)
     shaField = strtok(0, ":"); // get the second field of the current line
 
     shaField[SHA_LENGTH] = '\0'; // turn new line character to null 
-printf("127 %s  \n", comparedSha);
     if(strcmp(comparedSha, shaField) == 0) // if passed in SHA equals current SHA
     {
       return 1; // return true
@@ -218,7 +215,6 @@ char* compareSongsToClient(char** inputBuffer, int numBufferEntries)
   int i;
   for (i = 0; i < numBufferEntries; i++)
   {
-    printf("iteration %d %s\n", i, inputBuffer[i]);
       // retrieve the current song and sha
       strcpy(currentLine, inputBuffer[i]);
 
@@ -227,11 +223,10 @@ char* compareSongsToClient(char** inputBuffer, int numBufferEntries)
 
       // retrieve the SHA of the song
       sha = strtok(NULL, ":");
-printf("228 %s\n", sha);
+
       // if the song is not found in the database, add it to output buffer
       if(containsSong(sha) == 0) 
       {
-        printf("entered\n");
         // add song name : SHA to result to be returned
         strcat(result, name); 
         strcat(result, ":");
