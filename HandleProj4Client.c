@@ -63,6 +63,7 @@ void HandleProj4Client(int cliSock, char *databaseName)
 			}
 
 		}
+		rcvMessage[totalBytesRcvd] = '\0';
 
 		// Check the message type (first 4 bytes in the message)
 		char typeField[5];
@@ -186,9 +187,19 @@ void HandleProj4Client(int cliSock, char *databaseName)
 		// PULL message contains type field, length field (2 bytes), and SHA.
 		else if (strcmp(typeField, PULLType) == 0)
 		{
+			/*
+			// DEBUGGING
+			printf("rcvMessage: ");
+			int i;
+			for (i = 0; i < totalBytesRcvd; i++)
+			{
+				printf("%c", rcvMessage[i]);
+			}
+			printf("\n");*/
+
 			// retrieve SHA from PULL message
 			char SHA[SHA_LENGTH+1];
-			strncpy(SHA, rcvMessage+6, SHA_LENGTH);
+			strcpy(SHA, rcvMessage+6);
 			printf("SHA RECEIVED: %s\n", SHA); // debugging
 
 			// get the song name corresponding to SHA
@@ -201,8 +212,9 @@ void HandleProj4Client(int cliSock, char *databaseName)
 			char song[MAX_SONG_LENGTH];
 			int songSize;
 			getSong(songName, song, &songSize);
+			songSize = songSize - 2; // has to do with how file works(?)
 			printf("SONG SIZE: %i\n", songSize);
-			song[songSize-2] = '\0'; // append null-terminator
+			song[songSize] = '\0'; // append null-terminator
 			printf("SONG RECEIVED: %s\n", song); // DEBUGGING
 
 			// create response message
