@@ -6,6 +6,14 @@
 
 const char* byte_to_binary(uint8_t x, char* binary);
 
+// prints every song and SHA combination from listResponse.
+// numEntries represents number of song and SHA combinations in listResponse.
+void printList(char* listResponse, unsigned long numEntries);
+
+// receives and sets response packet to response
+unsigned long receiveResponse(int sock, char* response);
+
+
 int main (int argc, char *argv[])
 {
 
@@ -82,61 +90,13 @@ int main (int argc, char *argv[])
 			if (numBytesSent < 0)
 			{
 				DieWithError("send() failed");
-			}			
-			
-			// receive listResponse message from server
-			char listResponse[BUFFSIZE]; // Buffer for received message
-			listResponse[0] = '\0'; // initialize to empty C-string
-			int retrievedLength = 0; // boolean representing whether we have retrieved value from length field
-			unsigned long length_Message = 0; // 2 byte field contains length of message (does not count type field)
-			int totalBytesRcvd = 0; // total number of bytes received
-			for (;;)
-			{
-				//printf("Entered infinite loop\n"); // debugging
-				char buffer[BUFFSIZE];
-				ssize_t numBytesRcvd = recv(sock, buffer, BUFFSIZE-1, 0);
-				//printf("numBytesRcvd: %zu\n", numBytesRcvd); // debugging
-				//printf("hello buffer received: %s\n", buffer); // debugging
-				if (numBytesRcvd < 0)
-					DieWithError("recv() failed");
-				else if (numBytesRcvd == 0)
-					DieWithError("recv() failed: connection closed prematurely");
-				buffer[numBytesRcvd] = '\0'; // append null-character
-				
-				// append received buffer to listResponse
-				int u;
-				for (u = totalBytesRcvd; u < totalBytesRcvd+numBytesRcvd; u++)
-				{
-					listResponse[u] = buffer[u-totalBytesRcvd];
-				}
-
-				// retrieve the length field from message. (located 4th-5th bytes)
-				if (!retrievedLength && numBytesRcvd >= 6)
-				{
-					char firstBin[9]; char secondBin[9];
-					byte_to_binary(listResponse[4], firstBin);
-					byte_to_binary(listResponse[5], secondBin);
-					strcat(firstBin, secondBin);
-					length_Message = (unsigned long)strtoul(firstBin, NULL, 2);
-					//printf("length_Message: %lu\n", length_Message); // DEBUGGING
-
-					retrievedLength = 1;
-				}
-
-				// update totalBytesRcvd;
-				totalBytesRcvd = totalBytesRcvd + numBytesRcvd;
-
-				// if message received is length_Message long, exit the loop
-				// 4 for type field, 2 for length field
-				if (totalBytesRcvd == 4 + 2 + length_Message)
-				{
-					//printf("totalBytesRcvd: %i\n length_Message: %lu\n", totalBytesRcvd, length_Message); // DEBUGGING
-					break;
-				}
-
 			}
 
-/*
+			// receive listResponse from server
+			char listResponse[BUFFSIZE];
+			unsigned long length_Message = receiveResponse(sock, listResponse);
+
+			/*
 			// print listResponse DEBUGGING
 			int j;
 			for (j = 0; j < totalBytesRcvd; j++)
@@ -145,131 +105,156 @@ int main (int argc, char *argv[])
 			}
 			printf("\n"); */
 			
-			// print the names of the songs in the server to stdout
-			printf("Song name \t SHA\n");
-			int i;
-			for (i = 0; i < length_Message/(MAX_SONGNAME_LENGTH+SHA_LENGTH); i++)
-			{
-				// retrieve song name
-				char currentSongName[MAX_SONGNAME_LENGTH+1];
-				strncpy(currentSongName, listResponse+4+2+i*(MAX_SONGNAME_LENGTH+SHA_LENGTH), MAX_SONGNAME_LENGTH);
-				
-				// retrieve SHA DEBUGGING
-				char currentSHA[SHA_LENGTH+1];
-				strncpy(currentSHA, listResponse+4+2+i*(MAX_SONGNAME_LENGTH+SHA_LENGTH)+MAX_SONGNAME_LENGTH, SHA_LENGTH);
+			// print every song and SHA combination from listResponse
+			printList(listResponse, length_Message);
 
-				// print song name and SHA
-				printf("%s \t %s\n", currentSongName, currentSHA);
+			scanf("%s", command); // read another command from user
+		}
+
+		else if (strcmp(command, "pull") == 0)
+		{
+			// construct PULL message
+			char pullMessage[BUFFSIZE];
+			strcpy(pullMessage, PULLType);
+
+			// message length is SHA_LENGTH
+			pullMessage[5] = (uint16_t)SHA_LENGTH;
+			pullMessage[4] = (uint16_t)SHA_LENGTH >> 8;
+
+						char firstBin[17]; char secondBin[9];
+						byte_to_binary(pullMessage[4], firstBin);
+						byte_to_binary(pullMessage[5], secondBin);
+						strcat(firstBin, secondBin);
+						unsigned long lengthMessage = (unsigned long)strtoul(firstBin, NULL, 2);
+						printf("lengthMessage: %lu\n", lengthMessage); // DEBUGGING
+
+			// DEBUGGING
+			char tmpSHA[128] = "00000000111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222226";
+			int k;
+			for (k = 0; k < 128; k++)
+			{
+				pullMessage[6+k] = tmpSHA[k];
 			}
+			// DEBUGGING print pullmessage that is about to be sent to server
+			int j;
+			for (j = 0; j < 134; j++)
+			{
+				printf("%c", pullMessage[j]);
+			}
+			printf("\n");
+
+			// send the PULL message to the server
+			ssize_t numBytes = send(sock, pullMessage, 4+2+SHA_LENGTH, 0);
+			//printf("numBytes sent for PULL: %zu\n", numBytes); // debugging
+			if (numBytes < 0)
+				DieWithError("send() failed");
+			else if (numBytes != 4+2+SHA_LENGTH)
+				DieWithError("send() failed: sent unexpected number of bytes");
+
+			// receive pullResponse message from server
+			char pullResponse[BUFFSIZE]; // create pullResponse
+			receiveResponse(sock, pullResponse);
+
+			// retrieve song name
+			char songName[MAX_SONGNAME_LENGTH+1];
+			strncpy(songName, pullResponse+4+2, MAX_SONGNAME_LENGTH);
+
+			// retrieve song file
+			char song[MAX_SONG_LENGTH+1];
+			strncpy(song, pullResponse+4+2+MAX_SONGNAME_LENGTH, MAX_SONG_LENGTH);
+
+			// print song name and song file DEBUGGING
+			printf("%s \t %s\n", songName, song);
 
 		}
-break; // DEBUGGING
+		
+		else if (strcmp(command, "push") == 0)
+		{
+			// construct PUSH message
+			char pushMessage[BUFFSIZE];
+			strcpy(pushMessage, PUSHType);
+
+			// append message length
+			unsigned long messageLen = MAX_SONGNAME_LENGTH + SHA_LENGTH + 15;
+			printf("ORIGINAL messageLen: %lu\n", messageLen);
+			pushMessage[5] = (uint16_t)messageLen;
+			pushMessage[4] = (uint16_t)messageLen >> 8;
+			
+						char firstBin[17]; char secondBin[9];
+						byte_to_binary(pushMessage[4], firstBin);
+						byte_to_binary(pushMessage[5], secondBin);
+						strcat(firstBin, secondBin);
+						unsigned long lengthMessage = (unsigned long)strtoul(firstBin, NULL, 2);
+						printf("lengthMessage: %lu\n", lengthMessage); // DEBUGGING
+
+			char songName[255] = "Name3";
+			// append null characters for the rest of songName
+			int r;
+			for (r = MAX_SONGNAME_LENGTH; r >= 5; r--)
+			{
+				songName[r] = '\0';
+			}
+
+			int i;
+			for (i = 0; i < 255; i++)
+			{
+				pushMessage[6+i] = songName[i];
+			}
+
+			char sha[128] = "12221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222228";
+			for (i = 0; i < 128; i++)
+			{
+				pushMessage[6+255+i] = sha[i];
+			}
+
+			char file[15] = "0124810354 6242";
+			for (i = 0; i < 128; i++)
+			{
+				pushMessage[6+255+128+i] = file[i];
+			}
+
+			// print pushMessage
+			for (i = 0; i < 6+255+128+15; i++)
+			{
+				printf("%c", pushMessage[i]);
+			}
+			printf("\n");
+
+			// send pushMessage to server
+			ssize_t numBytes = send(sock, pushMessage, 4+2+MAX_SONGNAME_LENGTH+SHA_LENGTH+15, 0); // 15 MUST BE REPLACED BY FILE LENGTH LATER
+			if (numBytes < 0)
+				DieWithError("send() failed");
+			else if (numBytes != 4+2+MAX_SONGNAME_LENGTH+SHA_LENGTH+15) // 15 MUST BE REPLACED BY FILE LENGTH LATER
+				DieWithError("send() failed: sent unexpected number of bytes");
+			
+			break;
+		}
+
 	}
-	
-
-	// construct PULL message
-	char pullMessage[BUFFSIZE];
-	strcpy(pullMessage, PULLType);
-
-
-	// message length is SHA_LENGTH
-	pullMessage[5] = (uint16_t)SHA_LENGTH;
-	pullMessage[4] = (uint16_t)SHA_LENGTH >> 8;
-
-
-				char firstBin[17]; char secondBin[9];
-				byte_to_binary(pullMessage[4], firstBin);
-				byte_to_binary(pullMessage[5], secondBin);
-				strcat(firstBin, secondBin);
-				unsigned long length_Message = (unsigned long)strtoul(firstBin, NULL, 2);
-				printf("length_Message: %lu\n", length_Message); // DEBUGGING
-
-	// DEBUGGING
-	char tmpSHA[128] = "12221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222226";
-	int k;
-	for (k = 0; k < 128; k++)
-	{
-		pullMessage[6+k] = tmpSHA[k];
-	}
-	// DEBUGGING print pullmessage that is about to be sent to server
-	int j;
-	for (j = 0; j < 134; j++)
-	{
-		printf("%c", pullMessage[j]);
-	}
-	printf("\n");
-	
-
-	//printf("hello-message sent: %s", helloMessage); // debugging
-	//printf("helloLength: %d\n", helloLength); // debugging
-
-	// send the PULL message to the server
-	ssize_t numBytes = send(sock, pullMessage, 4+2+SHA_LENGTH, 0);
-	//printf("numBytes sent for PULL: %zu\n", numBytes); // debugging
-	if (numBytes < 0)
-		DieWithError("send() failed");
-	else if (numBytes != 4+2+SHA_LENGTH)
-		DieWithError("send() failed: sent unexpected number of bytes");
 
 	return 0;
 }
-/*
-	// receive the ACK message
-	char ackMessage[MAXLINE];
-	ackMessage[0] = '\0'; // initialize to empty C-string
-	for (;;)
+
+// prints every song and SHA combination from listResponse.
+// numEntries represents number of song and SHA combinations in listResponse.
+void printList(char* listResponse, unsigned long numEntries)
+{
+	// print the names of the songs in the server to stdout
+	printf("Song name \t SHA\n");
+	int i;
+	for (i = 0; i < numEntries/(MAX_SONGNAME_LENGTH+SHA_LENGTH); i++)
 	{
-		//printf("Entered infinite loop\n"); // debugging
-		char buffer[BUFFSIZE];
-		numBytes = recv(sock, buffer, BUFFSIZE-1, 0);
-		if (numBytes < 0)
-			DieWithError("recv() failed");
-		else if (numBytes == 0)
-			DieWithError("recv() failed: connection closed prematurely");
-		buffer[numBytes] = '\0'; // append null-character
-		strcat(ackMessage, buffer); // append the received buffer to ackMessage
+		// retrieve song name
+		char currentSongName[MAX_SONGNAME_LENGTH+1];
+		strncpy(currentSongName, listResponse+4+2+i*(MAX_SONGNAME_LENGTH+SHA_LENGTH), MAX_SONGNAME_LENGTH);
+		currentSongName[MAX_SONGNAME_LENGTH] = '\0';
+	
+		// retrieve SHA DEBUGGING
+		char currentSHA[SHA_LENGTH+1];
+		strncpy(currentSHA, listResponse+4+2+i*(MAX_SONGNAME_LENGTH+SHA_LENGTH)+MAX_SONGNAME_LENGTH, SHA_LENGTH);
+		currentSHA[SHA_LENGTH] = '\0';
 
-		// if new-line character is received, exit the loop
-		if (buffer[numBytes-1] == '\n')
-		{
-			//printf("new-line char received\n"); // debugging
-			break;
-		}
-		//printf("end\n"); \\ debugging
+		// print song name and SHA
+		printf("%s \t %s\n", currentSongName, currentSHA);
 	}
-
-	// print the ACK message
-	fputs("Received ACK message: ", stdout);
-	fputs(ackMessage, stdout);
-
-	// retrieve the cookie field from ackMessage
-	char cookieString[MAXLINE];
-	// position in ackMessage where second space-character occurs
-	int secondSpace = findSecondSpace(ackMessage);
-	//printf("second-space position: %d\n", secondSpace); // debugging
-	// copy the cookie part of ackMessage to cookieString
-	strncpy(cookieString, ackMessage+secondSpace+1, strlen(ackMessage)-secondSpace-2);
-
-	// construct BYE message
-	char byeMessage[MAXLINE];
-	strcpy(byeMessage, BYEVersion);
-	strcat(byeMessage, BYEType);
-	strcat(byeMessage, cookieString);
-	//printf("cookie string: %s\n", cookieString); // debugging
-	int byeLength = strlen(byeMessage); // store length of byeMessage
-	byeMessage[byeLength] = '\n'; // append new-line character
-	byeMessage[byeLength+1] = '\0'; // append null-character
-	byeLength = strlen(byeMessage); // update byeLength
-
-	//printf("bye-message sent: %s", byeMessage); // debugging
-	//printf("byeLength: %d\n", byeLength); // debugging
-
-	// send the BYE message to the server
-	numBytes = send(sock, byeMessage, byeLength, 0);
-	if (numBytes < 0)
-		DieWithError("send() failed");
-	else if (numBytes != byeLength)
-		DieWithError("send() failed: sent unexpected number of bytes");
-
-	return 0;
-} */
+}
