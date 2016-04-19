@@ -1,6 +1,6 @@
 // Kyong Lee
 
-#ifndef NETWORK_HEADER__H 
+#ifndef NETWORK_HEADER_H 
 #define NETWORK_HEADER_H
 
 #include <stdio.h>      /* for printf() and fprintf() */
@@ -21,12 +21,15 @@
 /* Miscellaneous constants */
 #define	MAXLINE		4096	/* max text line length */
 #define	MAXSOCKADDR  128	/* max socket address structure size */
-#define	BUFFSIZE	66535	/* buffer size for reads and writes */
+#define	BUFFSIZE	8192	/* buffer size for reads and writes */
 #define	LISTENQ		1024	/* 2nd argument to listen() */
 #define SHORT_BUFFSIZE  100     /* For messages I know are short */
-#define MAX_SONGNAME_LENGTH 255 /* max song name length */
+#define MAX_SONGNAME_LENGTH 5 /* max song name length */
 #define SHA_LENGTH 128 /* length of SHA-512 */
-#define MAX_SONG_LENGTH 64535 /* max length of song */
+#define MAX_SONG_LENGTH 65535 /* max length of song */
+
+#define NUM_BYTES_COMMAND_FIELD 4
+#define LENGTH_FIELD_BYTES 2
 
 #define LISTType "LIST"
 #define PULLType "PULL"
