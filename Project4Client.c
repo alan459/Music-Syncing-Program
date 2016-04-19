@@ -8,9 +8,13 @@ const char* byte_to_binary(uint8_t x, char* binary);
 
 // prints every song and SHA combination from listResponse.
 // numEntries represents number of song and SHA combinations in listResponse.
-void printList(char* listResponse, unsigned long numEntries);
+void printLIST(char* listResponse, unsigned long numEntries);
 
-// receives and sets response packet to response
+// Constructs and sends LIST message to server.
+void sendLIST(int sock);
+
+// Receives and sets response packet to response.
+// Returns length field of response pakcet as unsigned long.
 unsigned long receiveResponse(int sock, char* response);
 
 
@@ -78,19 +82,9 @@ int main (int argc, char *argv[])
 	{
 		if (strcmp(command, "list") == 0)
 		{
-			// construct LIST message
-			char listMessage[BUFFSIZE];
-			strcat(listMessage, LISTType);
-			// length field is zero
-			listMessage[4] = 0x0;
-			listMessage[5] = 0x0;
-			
+
 			// send LIST message to server
-			ssize_t numBytesSent = send(sock, listMessage, 4+2, 0);
-			if (numBytesSent < 0)
-			{
-				DieWithError("send() failed");
-			}
+			sendLIST(sock);
 
 			// receive listResponse from server
 			char listResponse[BUFFSIZE];
@@ -106,7 +100,7 @@ int main (int argc, char *argv[])
 			printf("\n"); */
 			
 			// print every song and SHA combination from listResponse
-			printList(listResponse, length_Message);
+			printLIST(listResponse, length_Message);
 
 			scanf("%s", command); // read another command from user
 		}
@@ -230,14 +224,48 @@ int main (int argc, char *argv[])
 			break;
 		}
 
+		else if (strcmp(command, "sync") == 0)
+		{
+			// send LIST message to server
+			sendList(sock);
+
+			// receive listResponse from server
+			char listResponse[BUFFSIZE];
+			unsigned long length_Message = receiveResponse(sock, listResponse);
+
+			// calculate different song files between client and server
+			handleDiff(listResponse, length_Message);
+
+			
+		}
+
 	}
 
 	return 0;
 }
 
+// Constructs and sends LIST message to server.
+void sendLIST(int sock)
+{
+	// construct LIST message
+	char listMessage[BUFFSIZE];
+	strcat(listMessage, LISTType);
+	// length field is zero
+	listMessage[4] = 0x0;
+	listMessage[5] = 0x0;
+	
+	// send LIST message to server
+	ssize_t numBytesSent = send(sock, listMessage, 4+2, 0);
+	if (numBytesSent < 0)
+	{
+		DieWithError("send() failed");
+	}
+}
+
+
 // prints every song and SHA combination from listResponse.
 // numEntries represents number of song and SHA combinations in listResponse.
-void printList(char* listResponse, unsigned long numEntries)
+void printLIST(char* listResponse, unsigned long numEntries)
 {
 	// print the names of the songs in the server to stdout
 	printf("Song name \t SHA\n");

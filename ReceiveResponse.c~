@@ -36,7 +36,6 @@ unsigned long receiveResponse(int sock, char* response)
 			byte_to_binary(response[5], secondBin);
 			strcat(firstBin, secondBin);
 			length_Message = (unsigned long)strtoul(firstBin, NULL, 2);
-			printf("length_Message: %lu\n", length_Message); // DEBUGGING
 
 			retrievedLength = 1;
 		}

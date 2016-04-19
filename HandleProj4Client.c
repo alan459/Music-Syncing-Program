@@ -166,7 +166,7 @@ void HandleProj4Client(int cliSock, char *databaseName)
 			int songSize;
 			getSong(songName, song, &songSize);
 			songSize = songSize - 2; // has to do with how file works(?)
-			printf("SONG SIZE: %i\n", songSize);
+			printf("SONG SIZE: %i\n", songSize); // DEBUGGING
 			song[songSize] = '\0'; // append null-terminator
 			printf("SONG RECEIVED: %s\n", song); // DEBUGGING
 
