@@ -282,8 +282,6 @@ char* compareSongsToServer(char** inputBuffer, int numBufferEntries)
         strcat(result, name); 
         strcat(result, ":");
         strcat(result, sha);
-
-        strcat(result, "\n");
       }
   }
 

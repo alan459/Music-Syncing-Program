@@ -8,9 +8,9 @@ const char* byte_to_binary(uint8_t x, char* binary);
 
 // prints every song and SHA combination from listResponse.
 // numEntries represents number of song and SHA combinations in listResponse.
-void printList(char* listResponse, int numEntries);
+void printList(char* listResponse, unsigned long numEntries);
 
-// receives and sets response packet from server to response
+// receives and sets response packet to response
 unsigned long receiveResponse(int sock, char* response);
 
 
@@ -94,8 +94,7 @@ int main (int argc, char *argv[])
 
 			// receive listResponse from server
 			char listResponse[BUFFSIZE];
-			unsigned long length_Message;
-			length_Message = receiveResponse(sock, listResponse);
+			unsigned long length_Message = receiveResponse(sock, listResponse);
 
 			/*
 			// print listResponse DEBUGGING
@@ -154,55 +153,7 @@ int main (int argc, char *argv[])
 
 			// receive pullResponse message from server
 			char pullResponse[BUFFSIZE]; // create pullResponse
-			pullResponse[0] = '\0'; // initialize to empty C-string
-			int retrievedLength = 0; // boolean representing whether we have retrieved value from length field
-			unsigned long length_Message = 0; // 2 byte field contains length of message (does not count type field)
-			int totalBytesRcvd = 0; // total number of bytes received
-			for (;;)
-			{
-				char buffer[BUFFSIZE];
-				ssize_t numBytesRcvd = recv(sock, buffer, BUFFSIZE-1, 0);
-				//printf("numBytesRcvd: %zu\n", numBytesRcvd); // debugging
-				//printf("hello buffer received: %s\n", buffer); // debugging
-				if (numBytesRcvd < 0)
-					DieWithError("recv() failed");
-				else if (numBytesRcvd == 0)
-					DieWithError("recv() failed: connection closed prematurely");
-				buffer[numBytesRcvd] = '\0'; // append null-character
-		
-				// append received buffer to pullResponse
-				int u;
-				for (u = totalBytesRcvd; u < totalBytesRcvd+numBytesRcvd; u++)
-				{
-					pullResponse[u] = buffer[u-totalBytesRcvd];
-				}
-
-				// retrieve the length field from message. (located 4th-5th bytes)
-				if (!retrievedLength && numBytesRcvd >= 6)
-				{
-					char firstBin[17]; char secondBin[9];
-					byte_to_binary(pullResponse[4], firstBin);
-					byte_to_binary(pullResponse[5], secondBin);
-					strcat(firstBin, secondBin);
-					length_Message = (unsigned long)strtoul(firstBin, NULL, 2);
-					printf("length_Message: %lu\n", length_Message); // DEBUGGING
-
-					retrievedLength = 1;
-				}
-
-				// update totalBytesRcvd;
-				totalBytesRcvd = totalBytesRcvd + numBytesRcvd;
-
-				printf("totalBytesRcvd: %i\n length_Message: %lu\n", totalBytesRcvd, length_Message); // DEBUGGING
-
-				// if message received is length_Message long, exit the loop
-				// 4 for type field, 2 for length field
-				if (totalBytesRcvd == 4 + 2 + length_Message)
-				{
-					break;
-				}
-
-			}
+			receiveResponse(sock, pullResponse);
 
 			// retrieve song name
 			char songName[MAX_SONGNAME_LENGTH+1];
@@ -214,11 +165,69 @@ int main (int argc, char *argv[])
 
 			// print song name and song file DEBUGGING
 			printf("%s \t %s\n", songName, song);
+
 		}
 		
 		else if (strcmp(command, "push") == 0)
 		{
+			// construct PUSH message
+			char pushMessage[BUFFSIZE];
+			strcpy(pushMessage, PUSHType);
+
+			// append message length
+			unsigned long messageLen = MAX_SONGNAME_LENGTH + SHA_LENGTH + 15;
+			printf("ORIGINAL messageLen: %lu\n", messageLen);
+			pushMessage[5] = (uint16_t)messageLen;
+			pushMessage[4] = (uint16_t)messageLen >> 8;
 			
+						char firstBin[17]; char secondBin[9];
+						byte_to_binary(pushMessage[4], firstBin);
+						byte_to_binary(pushMessage[5], secondBin);
+						strcat(firstBin, secondBin);
+						unsigned long lengthMessage = (unsigned long)strtoul(firstBin, NULL, 2);
+						printf("lengthMessage: %lu\n", lengthMessage); // DEBUGGING
+
+			char songName[255] = "Name3";
+			// append null characters for the rest of songName
+			int r;
+			for (r = MAX_SONGNAME_LENGTH; r >= 5; r--)
+			{
+				songName[r] = '\0';
+			}
+
+			int i;
+			for (i = 0; i < 255; i++)
+			{
+				pushMessage[6+i] = songName[i];
+			}
+
+			char sha[128] = "12221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222228";
+			for (i = 0; i < 128; i++)
+			{
+				pushMessage[6+255+i] = sha[i];
+			}
+
+			char file[15] = "0124810354 6242";
+			for (i = 0; i < 128; i++)
+			{
+				pushMessage[6+255+128+i] = file[i];
+			}
+
+			// print pushMessage
+			for (i = 0; i < 6+255+128+15; i++)
+			{
+				printf("%c", pushMessage[i]);
+			}
+			printf("\n");
+
+			// send pushMessage to server
+			ssize_t numBytes = send(sock, pushMessage, 4+2+MAX_SONGNAME_LENGTH+SHA_LENGTH+15, 0); // 15 MUST BE REPLACED BY FILE LENGTH LATER
+			if (numBytes < 0)
+				DieWithError("send() failed");
+			else if (numBytes != 4+2+MAX_SONGNAME_LENGTH+SHA_LENGTH+15) // 15 MUST BE REPLACED BY FILE LENGTH LATER
+				DieWithError("send() failed: sent unexpected number of bytes");
+			
+			break;
 		}
 
 	}
@@ -228,7 +237,7 @@ int main (int argc, char *argv[])
 
 // prints every song and SHA combination from listResponse.
 // numEntries represents number of song and SHA combinations in listResponse.
-void printList(char* listResponse, int numEntries)
+void printList(char* listResponse, unsigned long numEntries)
 {
 	// print the names of the songs in the server to stdout
 	printf("Song name \t SHA\n");
@@ -247,59 +256,5 @@ void printList(char* listResponse, int numEntries)
 
 		// print song name and SHA
 		printf("%s \t %s\n", currentSongName, currentSHA);
-	}
-}
-
-// receives and sets response packet from server to response
-unsigned long receiveResponse(int sock, char* response)
-{
-	// receive response message from server
-	int retrievedLength = 0; // boolean representing whether we have retrieved value from length field
-	unsigned long length_Message = 0; // 2 byte field contains length of message (does not count type field)
-	int totalBytesRcvd = 0; // total number of bytes received
-	for (;;)
-	{
-		char buffer[BUFFSIZE];
-		ssize_t numBytesRcvd = recv(sock, buffer, BUFFSIZE-1, 0);
-		//printf("numBytesRcvd: %zu\n", numBytesRcvd); // debugging
-		//printf("hello buffer received: %s\n", buffer); // debugging
-		if (numBytesRcvd < 0)
-			DieWithError("recv() failed");
-		else if (numBytesRcvd == 0)
-			DieWithError("recv() failed: connection closed prematurely");
-		buffer[numBytesRcvd] = '\0'; // append null-character
-
-		// append received buffer to response
-		int u;
-		for (u = totalBytesRcvd; u < totalBytesRcvd+numBytesRcvd; u++)
-		{
-			response[u] = buffer[u-totalBytesRcvd];
-		}
-
-		// retrieve the length field from message. (located 4th-5th bytes)
-		if (!retrievedLength && numBytesRcvd >= 6)
-		{
-			char firstBin[17]; char secondBin[9];
-			byte_to_binary(response[4], firstBin);
-			byte_to_binary(response[5], secondBin);
-			strcat(firstBin, secondBin);
-			length_Message = (unsigned long)strtoul(firstBin, NULL, 2);
-			printf("length_Message: %lu\n", length_Message); // DEBUGGING
-
-			retrievedLength = 1;
-		}
-
-		// update totalBytesRcvd;
-		totalBytesRcvd = totalBytesRcvd + numBytesRcvd;
-
-		printf("totalBytesRcvd: %i\n length_Message: %lu\n", totalBytesRcvd, length_Message); // DEBUGGING
-
-		// if message received is length_Message long, exit the loop
-		// 4 for type field, 2 for length field
-		if (totalBytesRcvd == 4 + 2 + length_Message)
-		{
-			return length_Message;
-		}
-
 	}
 }
