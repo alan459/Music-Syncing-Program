@@ -1,25 +1,23 @@
 #include <stdio.h>
 
 /**
-Takes as a parameter a pointer to the first of 2 bytes specifying length.
+* Takes as a parameter a pointer to the first of 2 bytes of a field specifying length.
+*
+* Shifts the first byte 8 orders of magnitude to the left and adds it to the value
+* of the bit on the right
 **/
-int getLength(char* field)
+unsigned int getLength(char* field)
 {
-	int byte1 = field[0];
-	int byte2 = field[1];
-
-	byte1 = byte1 << 8;
-
-	return byte1 + byte2;
+	return (unsigned int) ( (field[0] << 8) + field[1] );
 
 }
 /* testing code
 main() 
 {
 	char field[2];
-	field[0] = 1;
+	field[0] = 127;
 	field[1] = 5;
 
-	int a = getLength(field);
-	printf("%d\n", a);
+	unsigned int a = getLength(field);
+	printf("%u\n", getLength(field));
 }*/
