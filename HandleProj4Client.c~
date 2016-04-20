@@ -245,8 +245,8 @@ void storeSong(char* songName, char* song, int numBytes)
 	int i;
 	for (i = 0; i < numBytes; i++)
 	{
-		printf("%c", song[i]);
 		fputc(song[i], filePointer);
 	}
-	printf("\n");
+
+	fclose(filePointer);
 }
