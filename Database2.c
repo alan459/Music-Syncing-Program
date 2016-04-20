@@ -294,14 +294,13 @@ char* compareSongsToServer(char* inputBuffer, int numBufferEntries)
   for (i = 0; i < numEntries; i++)
   {
 
-
-
-    
       // retrieve the current song and sha
       strcpy(currentLine, songList[i]);
 
+
       // get the name of the song only
       name = strtok(currentLine, ":");
+
 
       // retrieve the SHA of the song
       sha = strtok(NULL, ":");
@@ -327,27 +326,23 @@ char* compareSongsToServer(char* inputBuffer, int numBufferEntries)
 * Takes filename and SHA value as parameters and determines if the database contains that file
 *  and returns 1 if true and 0 if false. 
 ****************************************************************************************************************/
-int listContainsSong(char* comparedSha, char** inputBuffer, int numBufferEntries)
+int listContainsSong(char* comparedSha, char* inputBuffer, int numBufferEntries)
 {
-  // for holding the current song:SHA pairing to be broken apart by strtok()
-  char* currentLine = (char *)  malloc(MAXIMUM_DATABASE_ENTRY_LENGTH + 1);
-
   // for holding the current SHA retrieved by breaking apart the song:SHA pairing with strtok()
-  char* shaField = malloc(SHA_LENGTH + 1);
+  char* shaField = malloc(SHA_LENGTH);
+
+  // move pointer past first song to start of sha
+  inputBuffer += SONG_LENGTH;
 
   // loop through the list of song:SHA pairings in the local database
   int i;
   for (i = 0; i < numBufferEntries; i++) 
   {
     // get current song and sha into a temporary variable
-    strcpy(currentLine, inputBuffer[i]);
+    strncpy(shaField, inputBuffer, SHA_LENGTH);
 
-    // break the current line along the ':' to prepare to get the SHA
-    strtok(currentLine, ":"); 
-
-    shaField = strtok(0, ":"); // get the second field of the current line
-
-    shaField[SHA_LENGTH] = '\0'; // turn new line character to null 
+    // move pointer past current sha and past next song name to start of next sha
+    inputBuffer += SHA_LENGTH + SONG_LENGTH;
 
     if(strcmp(comparedSha, shaField) == 0) // if passed in SHA equals current SHA
     {
