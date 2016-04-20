@@ -218,7 +218,7 @@ char* compareSongsToClient(char* inputBuffer, int numBufferEntries)
   ptr += 2;
 
   // number of songs currently in the array being returned
-  int numEntries = 0; 
+  int numResults = 0; 
 
   // go through the entire input buffer
   int i;
@@ -248,7 +248,7 @@ char* compareSongsToClient(char* inputBuffer, int numBufferEntries)
         // add sha to result to be returned
         strncpy(ptr, sha, SHA_LENGTH);
 
-        numEntries++;
+        numResults++;
       }
   }
 
@@ -257,7 +257,7 @@ char* compareSongsToClient(char* inputBuffer, int numBufferEntries)
 
 
   // add the length field to the first 2 bytes of result
-  convertLengthTo2Bytes(result, numEntries);
+  convertLengthTo2Bytes(result, numResults);
 
 
   return result;
@@ -274,6 +274,7 @@ char* compareSongsToClient(char* inputBuffer, int numBufferEntries)
 ****************************************************************************************************************/
 char* compareSongsToServer(char* inputBuffer, int numBufferEntries) 
 {
+  // current line of local database
   char* currentLine = (char*) malloc(SONG_LENGTH + SHA_LENGTH + 1);
 
   // allocate a variable for names in the buffer
@@ -290,13 +291,12 @@ char* compareSongsToServer(char* inputBuffer, int numBufferEntries)
   ptr += 2;
 
   // number of songs currently in the array being returned
-  int numEntries = 0; 
+  int numResults = 0; 
 
   // go through the entire song list
   int i;
   for (i = 0; i < numEntries; i++)
   {
-
       // retrieve the current song and sha
       strcpy(currentLine, songList[i]);
 
@@ -307,17 +307,25 @@ char* compareSongsToServer(char* inputBuffer, int numBufferEntries)
       sha = strtok(NULL, ":");
 
       // if the song is not found in the database, add it to output buffer
-      if(listContainsSong(sha, inputBuffer, numBufferEntries) == 0) 
+      if(listContainsSong(sha, inputBuffer, numBufferEntries) == 0) // FALSE
       {
         // add song name : SHA to result to be returned
-        strcat(result, name); 
-        strcat(result, ":");
-        strcat(result, sha);
+        strncpy(ptr, name, SONG_LENGTH); 
+
+        ptr += SONG_LENGTH;
+
+        strncpy(ptr, sha, SHA_LENGTH);
+        ptr += SHA_LENGTH;
+        printf("enter\n");
+        numResults++;
       }
   }
-
+printf("numEntries %d\n", numResults);
   // null terminate the result
   strcat(result, "\0");
+
+  // add the length field to the first 2 bytes of result
+  convertLengthTo2Bytes(result, numResults);
 
   return result;
 }
@@ -437,7 +445,7 @@ main()
 
   printf("%d\n", ptr[1]);
 
-  
+
   open_database("compare.dat");
   char* in =  "Name913221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222226Name412221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222221Name112221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222226";
   char* coma = compareSongsToClient(in, 2);
@@ -456,13 +464,7 @@ main()
 
   int lenb = getLength(comb);
   comb += 2;
-  printf("\nnext\n");
-  for(int i = 0; i < lenb; i++)
-  {
-    printf("song %s\n", comb);
-    comb += SONG_LENGTH;
-    printf("sha %s\n", comb);
-    comb += SHA_LENGTH;
-  }
+  printf("\nnext %s \n", comb);
+
   close_database();
 }
