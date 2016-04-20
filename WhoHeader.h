@@ -1,3 +1,4 @@
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -21,7 +22,7 @@ int containsSong(char* comparedSha);
 
 /* Takes filename and SHA value as parameters and determines if the database contains that file
 *  and returns 1 if true and 0 if false. */
-int listContainsSong(char* comparedSha, char** inputBuffer, int numBufferEntries);
+int listContainsSong(char* comparedSha, char* inputBuffer, int numBufferEntries);
 
 /* Given an SHA returns a song name based on SHA to song name mappings in the local database. */
 char* getSongName(char* SHA);
@@ -33,11 +34,11 @@ void addSong(char* songName, char* SHA);
 
 /* Takes as a parameter the list of songs:SHA pairings to compare to our local database contents.
 *  Returns a list of songs:SHA pairings of files not stored on our local database based on SHA values. */
-char* compareSongsToClient(char** inputBuffer, int numBufferEntries);
+char* compareSongsToClient(char* inputBuffer, int numBufferEntries);
 
 /* Takes as a parameter the list of songs:SHA pairings to compare to our local database contents.
 *  Returns a list of songs:SHA pairings of files not stored on the server database based on SHA values. */
-char* compareSongsToServer(char** inputBuffer, int numBufferEntries);
+char* compareSongsToServer(char* inputBuffer, int numBufferEntries);
 
 /* Takes in song name find out in database contains song of the same name. */
 int fileExists(char* fileName);

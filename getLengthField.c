@@ -19,13 +19,13 @@ unsigned int getLength(char* field)
 * Shifts the first byte 8 orders of magnitude to the left and adds it to the value
 * of the bit on the right
 **/
-void convertLengthTo2Bytes(char* ptr, int length)
+void convertLengthTo2Bytes(char* ptr, unsigned long length)
 {
 	// get the rightmost 8 bits of the length field
-	char byte2 = (char) length % 128;
+	char byte2 = (char) length % 256;
 
 	// get the next 8 bits of the length field
-	char byte1 = (char) length / 128;
+	char byte1 = (char) length / 256;
 
 	ptr[0] = byte1;
 	ptr[1] = byte2;
