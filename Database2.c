@@ -4,7 +4,7 @@
 
 /* Classwide constants */
 #define MAXIMUM_DATABASE_ENTRY_LENGTH 158
-#define SONG_LENGTH 255
+#define SONG_LENGTH 5
 #define SHA_LENGTH 128
 #define MAX_NUM_RECORDS 500
 
@@ -391,8 +391,8 @@ int fileExists(char* fileName)
 //Sets the file pointer to a song given the specs of the song
 void getSong(char* songName, char* song, int* numBytes)
 {
-  FILE* filePointer;
-  if ( (filePointer = fopen(songName, "r+")) == NULL )
+  FILE* localPointer;
+  if ( (localPointer = fopen(songName, "r+")) == NULL )
   {
     fprintf(stderr, "Error: Can't open file %s\n", songName);
     exit(1);
@@ -402,7 +402,7 @@ void getSong(char* songName, char* song, int* numBytes)
   int c;
   do
   {
-    c = getc (filePointer);
+    c = getc (localPointer);
     song[i] = c;
     i++;
   } while (c != EOF);
@@ -414,8 +414,8 @@ void getSong(char* songName, char* song, int* numBytes)
 //Stores a song given the song information
 void storeSong(char* songName, char* song, int numBytes)
 {
-  FILE* filePointer;
-  if ( (filePointer = fopen(songName, "w+")) == NULL )
+  FILE* localPointer;
+  if ( (localPointer = fopen(songName, "w+")) == NULL )
   {
     fprintf(stderr, "Error: Can't open file %s\n", songName);
     exit(1);
@@ -424,7 +424,7 @@ void storeSong(char* songName, char* song, int numBytes)
   int i;
   for (i = 0; i < numBytes; i++)
   {
-    fputc(song[i], filePointer);
+    fputc(song[i], localPointer);
   }
 }
 
@@ -432,4 +432,37 @@ void storeSong(char* songName, char* song, int numBytes)
 main()
 {
   printf("hello\n");
+  char* ptr = malloc(5);
+  convertLengthTo2Bytes(ptr, 5);
+
+  printf("%d\n", ptr[1]);
+
+  
+  open_database("compare.dat");
+  char* in =  "Name913221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222226Name412221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222221Name112221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222226";
+  char* coma = compareSongsToClient(in, 2);
+  char* comb = compareSongsToServer(in, 2);
+
+  int lena = getLength(coma);
+  coma += 2;
+  for(int i = 0; i < lena; i++)
+  {
+    printf("song %s\n", coma);
+    coma += SONG_LENGTH;
+    printf("sha %s\n", coma);
+    coma += SHA_LENGTH;
+  }
+  //printf("a: %s\n", coma);
+
+  int lenb = getLength(comb);
+  comb += 2;
+  printf("\nnext\n");
+  for(int i = 0; i < lenb; i++)
+  {
+    printf("song %s\n", comb);
+    comb += SONG_LENGTH;
+    printf("sha %s\n", comb);
+    comb += SHA_LENGTH;
+  }
+  close_database();
 }
