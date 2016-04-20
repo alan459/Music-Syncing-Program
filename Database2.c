@@ -1,5 +1,6 @@
 #include "WhoHeader.h"
 #include "NetworkHeader.h"
+#include "getLengthField.c"
 
 /* Classwide constants */
 #define MAXIMUM_DATABASE_ENTRY_LENGTH 158
@@ -273,6 +274,8 @@ char* compareSongsToClient(char* inputBuffer, int numBufferEntries)
 ****************************************************************************************************************/
 char* compareSongsToServer(char* inputBuffer, int numBufferEntries) 
 {
+  char* currentLine = (char*) malloc(SONG_LENGTH + SHA_LENGTH + 1);
+
   // allocate a variable for names in the buffer
   char* name = malloc(SONG_LENGTH);
   char* sha = malloc(SHA_LENGTH + 1);
@@ -297,10 +300,8 @@ char* compareSongsToServer(char* inputBuffer, int numBufferEntries)
       // retrieve the current song and sha
       strcpy(currentLine, songList[i]);
 
-
       // get the name of the song only
       name = strtok(currentLine, ":");
-
 
       // retrieve the SHA of the song
       sha = strtok(NULL, ":");
@@ -425,4 +426,10 @@ void storeSong(char* songName, char* song, int numBytes)
   {
     fputc(song[i], filePointer);
   }
+}
+
+
+main()
+{
+  printf("hello\n");
 }
