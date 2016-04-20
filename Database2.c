@@ -1,10 +1,9 @@
 #include "WhoHeader.h"
 #include "NetworkHeader.h"
-#include "getLengthField.c"
 
 /* Classwide constants */
-#define MAXIMUM_DATABASE_ENTRY_LENGTH 158
-#define SONG_LENGTH 5
+#define MAXIMUM_DATABASE_ENTRY_LENGTH 383
+#define SONG_LENGTH 6
 #define SHA_LENGTH 128
 #define MAX_NUM_RECORDS 500
 
@@ -103,16 +102,18 @@ char** lookup_songs (int* no_of_entries)
 ****************************************************************************************************************/
 int containsSong(char* comparedSha) 
 {
+  //printf("BEGINS %s\n", comparedSha);
   // for holding the current song:SHA pairing to be broken apart by strtok()
   char* currentLine = (char *)  malloc(MAXIMUM_DATABASE_ENTRY_LENGTH + 1);
 
   // for holding the current SHA retrieved by breaking apart the song:SHA pairing with strtok()
   char* shaField = malloc(SHA_LENGTH + 1);
-
+  //printf("BEGINS %s\n", comparedSha);
   // loop through the list of song:SHA pairings in the local database
   int i;
   for (i = 0; i < numEntries; i++) 
   {
+    //printf("I BEGINS %s\n", comparedSha);
     // get current song and sha into a temporary variable
     strcpy(currentLine, songList[i]);
 
@@ -122,8 +123,8 @@ int containsSong(char* comparedSha)
     shaField = strtok(0, ":"); // get the second field of the current line
 
     shaField[SHA_LENGTH] = '\0'; // turn new line character to null 
-
-    if(strcmp(comparedSha, shaField) == 0) // if passed in SHA equals current SHA
+    //printf("Contains song sha \n%s\n%s\n", shaField, comparedSha);
+    if(strncmp(comparedSha, shaField, SHA_LENGTH) == 0) // if passed in SHA equals current SHA
     {
       return 1; // return true
     }
@@ -230,15 +231,19 @@ char* compareSongsToClient(char* inputBuffer, int numBufferEntries)
       // move pointer past current song to start of sha field
       inputBuffer += SONG_LENGTH;
 
+      printf("Comapre() for loop Song %s\n", name);
+
       // retrieve the current sha
       strncpy(sha, inputBuffer, SHA_LENGTH);
 
       // move pointer past current sha to start of next song field
       inputBuffer += SHA_LENGTH;
 
+      printf("Compare() sha in for loop %lu %s\n", strlen(sha), sha);
       // if the song is not found in the database, add it to output buffer
       if(containsSong(sha) == 0) 
       {
+        printf("not contains song true\n");
         // add song name to result to be returned
         strncpy(ptr, name, SONG_LENGTH);
 
@@ -248,14 +253,20 @@ char* compareSongsToClient(char* inputBuffer, int numBufferEntries)
         // add sha to result to be returned
         strncpy(ptr, sha, SHA_LENGTH);
 
+        // move pointer past sha and null character to place sha is to be added
+        ptr += SHA_LENGTH;
+
         numResults++;
       }
   }
 
   // null terminate the result
+  //ptr = NULL;
+
+  // null terminate the result
   strcat(result, "\0");
 
-
+  printf("num results %d \n", numResults);
   // add the length field to the first 2 bytes of result
   convertLengthTo2Bytes(result, numResults);
 
@@ -436,22 +447,54 @@ void storeSong(char* songName, char* song, int numBytes)
   }
 }
 
+/**
+* Takes as a parameter a pointer to the first of 2 bytes of a field specifying length.
+*
+* Shifts the first byte 8 orders of magnitude to the left and adds it to the value
+* of the bit on the right
+**/
+unsigned long getLength(char* field)
+{
+  return (unsigned long) ( (field[0] << 8) + field[1] );
+
+}
+
+
+/**
+* Takes as a parameter a pointer to the first of 2 bytes of a field specifying length.
+* Changes the length field in the passed in pointer to the 2 byte representation of 
+* the passed in length value.
+* Shifts the first byte 8 orders of magnitude to the left and adds it to the value
+* of the bit on the right
+**/
+void convertLengthTo2Bytes(char* ptr, unsigned long length)
+{
+  // get the rightmost 8 bits of the length field
+  char byte2 = (char) length % 256;
+
+  // get the next 8 bits of the length field
+  char byte1 = (char) length / 256;
+
+  ptr[0] = byte1;
+  ptr[1] = byte2;
+
+}
 
 main()
 {
   printf("hello\n");
-  char* ptr = malloc(5);
-  convertLengthTo2Bytes(ptr, 5);
-
-  printf("%d\n", ptr[1]);
-
 
   open_database("compare.dat");
-  char* in =  "Name913221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222226Name412221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222221Name112221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222226";
-  char* coma = compareSongsToClient(in, 2);
-  char* comb = compareSongsToServer(in, 2);
+
+  // 2 entries to be sumbitted to tesrter
+  char* in =  "Name9\0a3221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222226Name4\0q2221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222229Nam45\0:x2221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222226";
+  
+  // parameters input buffer, length
+  char* coma = compareSongsToClient(in, 3);
+  //char* comb = compareSongsToServer(in, 3);
 
   int lena = getLength(coma);
+  printf("length %d SONGS FROM COMPARISON A:\n", lena);
   coma += 2;
   for(int i = 0; i < lena; i++)
   {
@@ -461,10 +504,10 @@ main()
     coma += SHA_LENGTH;
   }
   //printf("a: %s\n", coma);
-
+/*
   int lenb = getLength(comb);
   comb += 2;
   printf("\nnext %s \n", comb);
-
+*/
   close_database();
 }
