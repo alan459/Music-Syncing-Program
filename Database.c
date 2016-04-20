@@ -359,3 +359,46 @@ int fileExists(char* fileName)
 
   return 0; // return false
 }
+
+
+//Sets the file pointer to a song given the specs of the song
+void getSong(char* songName, char* song, int* numBytes)
+{
+  FILE* file;
+  if ( (file = fopen(songName, "r+")) == NULL )
+  {
+    fprintf(stderr, "Error: Can't open file %s\n", songName);
+    exit(1);
+  }
+
+  int i = 0;
+  int c;
+  do
+  {
+    c = getc (file);
+    song[i] = c;
+    i++;
+  } while (c != EOF);
+
+  *numBytes = i;
+	fclose(file);
+}
+
+
+//Stores a song given the song information
+void storeSong(char* songName, char* song, int numBytes)
+{
+  FILE* file;
+  if ( (file = fopen(songName, "w+")) == NULL )
+  {
+    fprintf(stderr, "Error: Can't open file %s\n", songName);
+    exit(1);
+  }
+
+  int i;
+  for (i = 0; i < numBytes; i++)
+  {
+    fputc(song[i], file);
+  }
+	fclose(file);
+}

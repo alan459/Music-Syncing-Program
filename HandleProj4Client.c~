@@ -5,13 +5,18 @@
 
 void getSong(char* songName, char* song, int* numBytes);
 void storeSong(char* songName, char* song, int numBytes);
-const char* byte_to_binary(uint8_t x, char* binary);
 
 // receives and sets response packet to response
 unsigned long receiveResponse(int sock, char* response);
 
 void HandleProj4Client(int cliSock, char *databaseName)
 {
+	// open database file
+	open_database(databaseName);
+	// retrieve all the songs from the database
+	int numEntries; // specifies number of songs
+	char** songs = lookup_songs(&numEntries);
+
 	for (;;) // breaks when leave message is received
 	{
 		// receive message from client
@@ -37,12 +42,6 @@ void HandleProj4Client(int cliSock, char *databaseName)
 		{
 			char listResponse[BUFFSIZE];
 			strcpy(listResponse, LISTType);
-
-			// open database file
-			open_database(databaseName);
-			// retrieve all the songs from the database
-			int numEntries; // specifies number of songs
-			char** songs = lookup_songs(&numEntries);
 
 			/* debugging
 			int q;
@@ -166,7 +165,7 @@ void HandleProj4Client(int cliSock, char *databaseName)
 			int songSize;
 			getSong(songName, song, &songSize);
 			songSize = songSize - 2; // has to do with how file works(?)
-			printf("SONG SIZE: %i\n", songSize);
+			printf("SONG SIZE: %i\n", songSize); // DEBUGGING
 			song[songSize] = '\0'; // append null-terminator
 			printf("SONG RECEIVED: %s\n", song); // DEBUGGING
 
@@ -207,6 +206,20 @@ void HandleProj4Client(int cliSock, char *databaseName)
 
 			// store song in database
 			storeSong(songName, song, songLength);
+
+/* //DEBUGGING
+			int i;
+			printf("songName: ");
+			for (i=0; i < 255; i++)
+				printf("%c", songName[i]);
+			printf("\n");
+
+			int j;
+			printf("SHA: ");
+			for (j=0; j < 128; j++)
+				printf("%c", SHA[j]);
+			printf("\n"); */
+
 			addSong(songName, SHA);
 		}
 	}
@@ -231,6 +244,8 @@ void getSong(char* songName, char* song, int* numBytes)
   } while (c != EOF);
 
 	*numBytes = i;
+
+	fclose(filePointer);
 }
 
 void storeSong(char* songName, char* song, int numBytes)

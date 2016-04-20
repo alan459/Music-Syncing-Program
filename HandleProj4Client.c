@@ -5,13 +5,18 @@
 
 void getSong(char* songName, char* song, int* numBytes);
 void storeSong(char* songName, char* song, int numBytes);
-const char* byte_to_binary(uint8_t x, char* binary);
 
 // receives and sets response packet to response
 unsigned long receiveResponse(int sock, char* response);
 
 void HandleProj4Client(int cliSock, char *databaseName)
 {
+	// open database file
+	open_database(databaseName);
+	// retrieve all the songs from the database
+	int numEntries; // specifies number of songs
+	char** songs = lookup_songs(&numEntries);
+
 	for (;;) // breaks when leave message is received
 	{
 		// receive message from client
@@ -37,12 +42,6 @@ void HandleProj4Client(int cliSock, char *databaseName)
 		{
 			char listResponse[BUFFSIZE];
 			strcpy(listResponse, LISTType);
-
-			// open database file
-			open_database(databaseName);
-			// retrieve all the songs from the database
-			int numEntries; // specifies number of songs
-			char** songs = lookup_songs(&numEntries);
 
 			/* debugging
 			int q;
@@ -207,46 +206,21 @@ void HandleProj4Client(int cliSock, char *databaseName)
 
 			// store song in database
 			storeSong(songName, song, songLength);
+
+/* //DEBUGGING
+			int i;
+			printf("songName: ");
+			for (i=0; i < 255; i++)
+				printf("%c", songName[i]);
+			printf("\n");
+
+			int j;
+			printf("SHA: ");
+			for (j=0; j < 128; j++)
+				printf("%c", SHA[j]);
+			printf("\n"); */
+
 			addSong(songName, SHA);
 		}
 	}
-}
-
-void getSong(char* songName, char* song, int* numBytes)
-{
-	FILE* filePointer;
-	if ( (filePointer = fopen(songName, "r+")) == NULL )
-	{
-  	fprintf(stderr, "Error: Can't open file %s\n", songName);
-  	exit(1);
-	}
-
-	int i = 0;
-	int c;
-	do
-	{
-    c = getc (filePointer);
-    song[i] = c;
-		i++;
-  } while (c != EOF);
-
-	*numBytes = i;
-}
-
-void storeSong(char* songName, char* song, int numBytes)
-{
-	FILE* filePointer;
-	if ( (filePointer = fopen(songName, "w+")) == NULL )
-	{
-  	fprintf(stderr, "Error: Can't open file %s\n", songName);
-  	exit(1);
-	}
-
-	int i;
-	for (i = 0; i < numBytes; i++)
-	{
-		fputc(song[i], filePointer);
-	}
-
-	fclose(filePointer);
 }

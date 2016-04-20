@@ -2,7 +2,8 @@
 
 const char* byte_to_binary(uint8_t x, char* binary);
 
-// receives and sets response packet to response
+// Receives and sets response packet to response.
+// Returns length field of response pakcet as unsigned long.
 unsigned long receiveResponse(int sock, char* response)
 {
 	// receive response message from server

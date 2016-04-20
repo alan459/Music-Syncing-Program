@@ -4,7 +4,12 @@
 
 /* function declarations */
 
-const char* byte_to_binary(uint8_t x, char* binary);
+void getSong(char* songName, char* song, int* numBytes);
+void storeSong(char* songName, char* song, int numBytes);
+
+// given a packet, looks at the length field (4-5th bytes) and returns
+// its corresponding decimal value as unsigned long
+unsigned long retrieveLength(char* packet);
 
 // prints every song and SHA combination from listResponse.
 // numEntries represents number of song and SHA combinations in listResponse.
@@ -115,15 +120,12 @@ int main (int argc, char *argv[])
 			pullMessage[5] = (uint16_t)SHA_LENGTH;
 			pullMessage[4] = (uint16_t)SHA_LENGTH >> 8;
 
-						char firstBin[17]; char secondBin[9];
-						byte_to_binary(pullMessage[4], firstBin);
-						byte_to_binary(pullMessage[5], secondBin);
-						strcat(firstBin, secondBin);
-						unsigned long lengthMessage = (unsigned long)strtoul(firstBin, NULL, 2);
+
+						unsigned long lengthMessage = retrieveLength(pullMessage);
 						printf("lengthMessage: %lu\n", lengthMessage); // DEBUGGING
 
 			// DEBUGGING
-			char tmpSHA[128] = "00000000111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222226";
+			char tmpSHA[128] = "00000000011111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222228";
 			int k;
 			for (k = 0; k < 128; k++)
 			{
@@ -174,14 +176,10 @@ int main (int argc, char *argv[])
 			pushMessage[5] = (uint16_t)messageLen;
 			pushMessage[4] = (uint16_t)messageLen >> 8;
 			
-						char firstBin[17]; char secondBin[9];
-						byte_to_binary(pushMessage[4], firstBin);
-						byte_to_binary(pushMessage[5], secondBin);
-						strcat(firstBin, secondBin);
-						unsigned long lengthMessage = (unsigned long)strtoul(firstBin, NULL, 2);
+						unsigned long lengthMessage = retrieveLength(pushMessage);
 						printf("lengthMessage: %lu\n", lengthMessage); // DEBUGGING
 
-			char songName[255] = "Name3";
+			char songName[255] = "Name2";
 			// append null characters for the rest of songName
 			int r;
 			for (r = MAX_SONGNAME_LENGTH; r >= 5; r--)
@@ -195,7 +193,7 @@ int main (int argc, char *argv[])
 				pushMessage[6+i] = songName[i];
 			}
 
-			char sha[128] = "12221111111111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222228";
+			char sha[128] = "00000000011111111222222222222222222221222111111111111122222222222222222222N12221111111111111222222222222222222222222222222222228";
 			for (i = 0; i < 128; i++)
 			{
 				pushMessage[6+255+i] = sha[i];
@@ -225,7 +223,7 @@ int main (int argc, char *argv[])
 		}
 
 		else if (strcmp(command, "sync") == 0)
-		{
+		{/*
 			// send LIST message to server
 			sendList(sock);
 
@@ -234,9 +232,23 @@ int main (int argc, char *argv[])
 			unsigned long length_Message = receiveResponse(sock, listResponse);
 
 			// calculate different song files between client and server
-			handleDiff(listResponse, length_Message);
+			char* clientSongs // songs that are in client but not in server
+			char* serverSongs // songs that are in server but not in client
+			handleDiff(listResponse+6, length_Message, clientSongs, serverSongs);
 
-			
+			// retrieve lengths of clientSongs and serverSongs
+			unsigned long lengthClient = retrieveLength(clientSongs);
+			unsigned long lengthServer = retrieveLength(serverSongs);
+			printf("lengthMessage: %lu\n", lengthClient); // DEBUGGING
+			printf("lengthMessage: %lu\n", lengthServer); // DEBUGGING
+
+			// push all the songs to server from clientSongs
+			int i;
+			for (i = 0; i < lengthClient; i++)
+			{
+				// retrieve song file from database
+				
+			}*/
 		}
 
 	}
@@ -286,3 +298,10 @@ void printLIST(char* listResponse, unsigned long numEntries)
 		printf("%s \t %s\n", currentSongName, currentSHA);
 	}
 }
+
+/*
+// Constructs and sends PUSH message to server
+void sendPUSH(int sock, unsigned long length, char* songName, char* SHA, char* songFile)
+{
+
+}*/

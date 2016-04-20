@@ -6,7 +6,7 @@
 # Macros
 CLIENT_SRCS=  Project4Client.c TCPClientUtility.c
 SERVER_SRCS=  Project4Server.c HandleProj4Client.c
-SRCS=DieWithError.c Database.c ByteToBinary.c ReceiveResponse.c
+SRCS=DieWithError.c Database.c ByteToBinary.c ReceiveResponse.c RetrieveLength.c
 HDRS=NetworkHeader.h WhoHeader.h
 CFLAGS= -Wall
 LFLAGS= 
