@@ -3,9 +3,6 @@
 #include "NetworkHeader.h"
 #include "WhoHeader.h"
 
-void getSong(char* songName, char* song, int* numBytes);
-void storeSong(char* songName, char* song, int numBytes);
-
 // receives and sets response packet to response
 unsigned long receiveResponse(int sock, char* response);
 
@@ -191,7 +188,8 @@ void HandleProj4Client(int cliSock, char *databaseName)
 		{
 			// retrieve song name
 			char songName[MAX_SONGNAME_LENGTH+1];
-			strncpy(songName, rcvMessage+4+2, MAX_SONGNAME_LENGTH); // empty bytes in songName field are null-terminators
+			strncpy(songName, rcvMessage+4+2, MAX_SONGNAME_LENGTH);
+			songName[MAX_SONGNAME_LENGTH] = '\0';
 
 			// retrieve SHA
 			char SHA[SHA_LENGTH+1];

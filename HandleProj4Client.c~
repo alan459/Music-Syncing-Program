@@ -3,9 +3,6 @@
 #include "NetworkHeader.h"
 #include "WhoHeader.h"
 
-void getSong(char* songName, char* song, int* numBytes);
-void storeSong(char* songName, char* song, int numBytes);
-
 // receives and sets response packet to response
 unsigned long receiveResponse(int sock, char* response);
 
@@ -76,12 +73,12 @@ void HandleProj4Client(int cliSock, char *databaseName)
 				{
 					songName[r] = '\0';
 				}
-				//printf("songName: %s\n", songName); // debugging
+				printf("songName: %s\n", songName); // debugging
 
 				// retrieve SHA 
 				char sha[SHA_LENGTH+1];
 				strcpy(sha, (*oneSong)+firstIndex+1);
-				//printf("SHA: %s\n", sha); // debugging
+				printf("SHA: %s\n", sha); // debugging
 
 				// store song name in listResponse packet
 				int j;
@@ -191,7 +188,8 @@ void HandleProj4Client(int cliSock, char *databaseName)
 		{
 			// retrieve song name
 			char songName[MAX_SONGNAME_LENGTH+1];
-			strncpy(songName, rcvMessage+4+2, MAX_SONGNAME_LENGTH); // empty bytes in songName field are null-terminators
+			strncpy(songName, rcvMessage+4+2, MAX_SONGNAME_LENGTH);
+			songName[MAX_SONGNAME_LENGTH] = '\0';
 
 			// retrieve SHA
 			char SHA[SHA_LENGTH+1];
@@ -223,45 +221,4 @@ void HandleProj4Client(int cliSock, char *databaseName)
 			addSong(songName, SHA);
 		}
 	}
-}
-
-void getSong(char* songName, char* song, int* numBytes)
-{
-	FILE* filePointer;
-	if ( (filePointer = fopen(songName, "r+")) == NULL )
-	{
-  	fprintf(stderr, "Error: Can't open file %s\n", songName);
-  	exit(1);
-	}
-
-	int i = 0;
-	int c;
-	do
-	{
-    c = getc (filePointer);
-    song[i] = c;
-		i++;
-  } while (c != EOF);
-
-	*numBytes = i;
-
-	fclose(filePointer);
-}
-
-void storeSong(char* songName, char* song, int numBytes)
-{
-	FILE* filePointer;
-	if ( (filePointer = fopen(songName, "w+")) == NULL )
-	{
-  	fprintf(stderr, "Error: Can't open file %s\n", songName);
-  	exit(1);
-	}
-
-	int i;
-	for (i = 0; i < numBytes; i++)
-	{
-		fputc(song[i], filePointer);
-	}
-
-	fclose(filePointer);
 }

@@ -1,11 +1,9 @@
 // Kyong Lee
 
 #include "NetworkHeader.h"
+#include "WhoHeader.h"
 
 /* function declarations */
-
-void getSong(char* songName, char* song, int* numBytes);
-void storeSong(char* songName, char* song, int numBytes);
 
 // given a packet, looks at the length field (4-5th bytes) and returns
 // its corresponding decimal value as unsigned long
@@ -18,9 +16,18 @@ void printLIST(char* listResponse, unsigned long numEntries);
 // Constructs and sends LIST message to server.
 void sendLIST(int sock);
 
+// Constructs and sends PUSH message to server
+void sendPUSH(int sock, unsigned long messageLen, char* songName, char* SHA, char* songFile, int songSize);
+
 // Receives and sets response packet to response.
 // Returns length field of response pakcet as unsigned long.
 unsigned long receiveResponse(int sock, char* response);
+
+/*
+Called when the user enters the 'DIFF' command on the client side
+LIST message format 1st 4 chars = message type 'list' next 2 = length, then song:sha.....
+*/
+void handleDiff(char* receivedList, unsigned long length, char* songs_Not_On_Client, char* songs_Not_On_Server);
 
 
 int main (int argc, char *argv[])
@@ -179,7 +186,7 @@ int main (int argc, char *argv[])
 						unsigned long lengthMessage = retrieveLength(pushMessage);
 						printf("lengthMessage: %lu\n", lengthMessage); // DEBUGGING
 
-			char songName[255] = "Name3";
+			char songName[255] = "Name2";
 			// append null characters for the rest of songName
 			int r;
 			for (r = MAX_SONGNAME_LENGTH; r >= 5; r--)
@@ -223,22 +230,33 @@ int main (int argc, char *argv[])
 		}
 
 		else if (strcmp(command, "sync") == 0)
-		{/*
+		{
 			// send LIST message to server
-			sendList(sock);
+			sendLIST(sock);
 
 			// receive listResponse from server
 			char listResponse[BUFFSIZE];
 			unsigned long length_Message = receiveResponse(sock, listResponse);
 
 			// calculate different song files between client and server
-			char* clientSongs // songs that are in client but not in server
-			char* serverSongs // songs that are in server but not in client
+			char* clientSongs = NULL; // songs that are in client but not in server
+			char* serverSongs = NULL; // songs that are in server but not in client
+			printf("ENTERED BEFORE HANDLEDIFF\n");
 			handleDiff(listResponse+6, length_Message, clientSongs, serverSongs);
 
+			printf("ENTERED AFTER HANDLEDIFF\n");
+
 			// retrieve lengths of clientSongs and serverSongs
-			unsigned long lengthClient = retrieveLength(clientSongs);
-			unsigned long lengthServer = retrieveLength(serverSongs);
+			unsigned long lengthClient = getLength(clientSongs);
+// DEBUGGING
+			for (i = 0; i < lengthClient; i++)
+			{
+				printf("%c", clientSongs[i]);
+			}
+			printf("\n");
+
+			unsigned long lengthServer = getLength(serverSongs);
+
 			printf("lengthMessage: %lu\n", lengthClient); // DEBUGGING
 			printf("lengthMessage: %lu\n", lengthServer); // DEBUGGING
 
@@ -246,9 +264,30 @@ int main (int argc, char *argv[])
 			int i;
 			for (i = 0; i < lengthClient; i++)
 			{
-				// retrieve song file from database
+				// retrieve song name from clientSongs
+				char songName[MAX_SONGNAME_LENGTH+1];
+				strncpy(songName, clientSongs + 2 + i*(MAX_SONGNAME_LENGTH+SHA_LENGTH), MAX_SONGNAME_LENGTH);
+				songName[MAX_SONGNAME_LENGTH] = '\0';
+				printf("songName: %s\n", songName);
+
+				// retrieve SHA from clientSongs
+				char SHA[SHA_LENGTH+1];
+				strncpy(SHA, clientSongs + 2 + i*(MAX_SONGNAME_LENGTH+SHA_LENGTH) + MAX_SONGNAME_LENGTH, SHA_LENGTH);
+				SHA[SHA_LENGTH] = '\0';
 				
-			}*/
+				// get the song file from database using name and SHA
+				char songFile[MAX_SONG_LENGTH];
+				int songSize;
+				getSong(songName, songFile, &songSize);
+				songSize = songSize - 2; // has to do with how file works(?)
+				printf("SONG SIZE: %i\n", songSize); // DEBUGGING
+				songFile[songSize] = '\0'; // append null-terminator
+				printf("SONG RECEIVED: %s\n", songFile); // DEBUGGING
+
+				// construct and send PUSH message to server
+				int length_field = 4+2+MAX_SONGNAME_LENGTH+SHA_LENGTH+songSize;
+				sendPUSH(sock, length_field, songName, SHA, songFile, songSize);
+			}
 		}
 
 	}
@@ -299,9 +338,62 @@ void printLIST(char* listResponse, unsigned long numEntries)
 	}
 }
 
-/*
+
 // Constructs and sends PUSH message to server
-void sendPUSH(int sock, unsigned long length, char* songName, char* SHA, char* songFile)
+void sendPUSH(int sock, unsigned long messageLen, char* songName, char* SHA, char* songFile, int songSize)
+{
+	// construct PUSH message
+	char pushMessage[BUFFSIZE];
+	strcpy(pushMessage, PUSHType);
+
+	// append message length
+	printf("ORIGINAL messageLen: %lu\n", messageLen); // DEBUGGING
+	pushMessage[5] = (uint16_t)messageLen;
+	pushMessage[4] = (uint16_t)messageLen >> 8;
+			
+						unsigned long lengthMessage = retrieveLength(pushMessage);
+						printf("lengthMessage: %lu\n", lengthMessage); // DEBUGGING
+
+	// append songName
+	int i;
+	for (i = 0; i < MAX_SONGNAME_LENGTH; i++)
+	{
+		pushMessage[4+2+i] = songName[i];
+	}
+
+	// append SHA
+	for (i = 0; i < SHA_LENGTH; i++)
+	{
+		pushMessage[4+2+MAX_SONGNAME_LENGTH+i] = SHA[i];
+	}
+
+	// append songFile
+	for (i = 0; i < songSize; i++)
+	{
+		pushMessage[4+2+MAX_SONGNAME_LENGTH+SHA_LENGTH+i] = songFile[i];
+	}
+
+	// send pushMessage to server
+	ssize_t numBytes = send(sock, pushMessage, 4+2+MAX_SONGNAME_LENGTH+SHA_LENGTH+songSize, 0);
+	if (numBytes < 0)
+		DieWithError("send() failed");
+	else if (numBytes != 4+2+MAX_SONGNAME_LENGTH+SHA_LENGTH+songSize)
+		DieWithError("send() failed: sent unexpected number of bytes");
+}
+
+
+/*
+Called when the user enters the 'DIFF' command on the client side
+LIST message format 1st 4 chars = message type 'list' next 2 = length, then song:sha.....
+*/
+void handleDiff(char* receivedList, unsigned long length, char* songs_Not_On_Client, char* songs_Not_On_Server)
 {
 
-}*/
+	songs_Not_On_Client = compareSongsToClient(receivedList, length);
+	//printf("SONGS NOT ON CLIENT:\n%s \n", songs_Not_On_Client);
+
+	songs_Not_On_Server = compareSongsToServer(receivedList, length);
+	//printf("SONGS NOT ON SERVER:\n%s \n", songs_Not_On_Server);
+
+}
+
