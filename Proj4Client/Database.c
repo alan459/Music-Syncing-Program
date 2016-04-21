@@ -152,7 +152,8 @@ char* getSongName(char* SHA)
     strcpy(currentLine, songList[i]);
 
     // break the current line along the ':' to prepare to get the SHA
-    nameField = strtok(currentLine, ":"); 
+    nameField = strtok(currentLine, ":");
+		printf("nameField: %s\n", nameField); 
 
     // get the second field of the current line
     shaField = strtok(NULL, ":"); 
@@ -384,8 +385,9 @@ int listContainsSong(char* comparedSha, char* inputBuffer, int numBufferEntries)
   // move pointer past first song to start of sha
   inputBuffer += SONG_LENGTH;
 	
+/*
 	printf("numBufferEntries???: %i\n", numBufferEntries);
-	printf("\n\ncomparedSHA: %s\n\n", comparedSha);
+	printf("\n\ncomparedSHA: %s\n\n", comparedSha);*/
 
   // loop through the list of song:SHA pairings in the local database
   int i;
@@ -396,7 +398,6 @@ int listContainsSong(char* comparedSha, char* inputBuffer, int numBufferEntries)
 
     // move pointer past current sha and past next song name to start of next sha
     inputBuffer += SHA_LENGTH + SONG_LENGTH;
-printf("shaField: %s\n", shaField);
     if(strcmp(comparedSha, shaField) == 0) // if passed in SHA equals current SHA
     {
       return 1; // return true

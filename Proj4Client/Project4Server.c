@@ -4,14 +4,13 @@
 
 int main (int argc, char *argv[])
 {
-  if (argc != 5) // Test for correct number of arguments
+  if (argc != 3) // Test for correct number of arguments
   {
-		printf("Error: Usage Project4Server -p <port> -d <database name>\n");
+		printf("Error: Usage Project4Server -p <port>\n");
     exit(1);
   } 
 
-  char* databaseName = argv[4]; // Database
-	//printf("database input: %s\n", databaseName); // debugging
+  char* databaseName = DATABASE_NAME; // Database
   in_port_t servPort = atoi(argv[2]); // Local port
 
   // Create socket for incoming connections

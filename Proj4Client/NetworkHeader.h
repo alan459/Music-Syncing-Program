@@ -13,6 +13,7 @@
 #include <stdint.h>			/* for uint16_t */
 #include <inttypes.h>		/* for printing uint16_t */
 
+#define DATABASE_NAME "database.dat"
 #define SERVER_HOST "mathcs02"  /* wallis IP address */
 #define SERVER_PORT "31305"
 

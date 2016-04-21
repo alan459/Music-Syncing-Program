@@ -28,7 +28,6 @@ void HandleProj4Client(int cliSock, char *databaseName)
 
 		printf("type of message received: %s\n", typeField); // debugging
 
-		//printf("length: %i\n", (int)strlen(typeField)); // debugging
 
 		// Received LIST message
 		// LIST message contains nothing but the message type and length field (which is zero).
@@ -40,13 +39,6 @@ void HandleProj4Client(int cliSock, char *databaseName)
 
 			char listResponse[BUFFSIZE];
 			strcpy(listResponse, LISTType);
-
-			/* debugging
-			int q;
-			for (q = 0; q < numEntries; q++)
-			{
-				printf("%s\n", songs[q]);
-			}*/
 
 			// find song names and SHA's from database and store in listResponse packet
 			int i;
@@ -100,16 +92,7 @@ void HandleProj4Client(int cliSock, char *databaseName)
 
 			}
 
-			/*//debugging
-			printf("sent: ");
-			int k;
-			for (k = 0; k < 4 + 2*(MAX_SONGNAME_LENGTH+SHA_LENGTH); k++) // 4 bytes for LIST and 2*158 bytes for 2 songs
-			{
-				printf("%c", listResponse[k]);
-			}
-			printf("\n");*/
-
-			// fill length field in 4th-5th of listResponse packet
+			// fill length field in 4th-5th bits of listResponse packet
 			listResponse[5] = (uint16_t)numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH);
 			listResponse[4] = (uint16_t)numEntries*(MAX_SONGNAME_LENGTH+SHA_LENGTH) >> 8;
 
@@ -128,8 +111,6 @@ void HandleProj4Client(int cliSock, char *databaseName)
 			{
 				DieWithError("send() failed");
 			}
-
-			//close_database(); // close database
 		}
 
 
@@ -201,9 +182,6 @@ void HandleProj4Client(int cliSock, char *databaseName)
 			strncpy(song, rcvMessage+4+2+MAX_SONGNAME_LENGTH+SHA_LENGTH, songLength);
 			song[songLength] = '\0';
 
-			// store song in database
-			storeSong(songName, song, songLength); // stores song file in this directory
-
 /* //DEBUGGING
 			int i;
 			printf("songName: ");
@@ -217,13 +195,21 @@ void HandleProj4Client(int cliSock, char *databaseName)
 				printf("%c", SHA[j]);
 			printf("\n"); */
 
+			// store song in database
+			storeSong(songName, song, songLength); // stores song file in this directory
 			addSong(songName, SHA); // stores song in txt file that keeps track of list of song and SHA combinations
 		}
 
 		else if (strcmp(typeField, LEAVEType) == 0)
 		{
+			close_database(); // Close database
 			close(cliSock); // Close client socket
 			return;
+		}
+
+		else
+		{
+			// do nothing
 		}
 	}
 }
