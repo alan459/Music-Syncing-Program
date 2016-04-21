@@ -239,24 +239,13 @@ int main (int argc, char *argv[])
 			unsigned long length_Message = receiveResponse(sock, listResponse);
 
 			// calculate different song files between client and server
-			char* clientSongs = NULL; // songs that are in client but not in server
-			char* serverSongs = NULL; // songs that are in server but not in client
-			printf("ENTERED BEFORE HANDLEDIFF\n");
+			char* clientSongs; // songs that are in client but not in server
+			char* serverSongs; // songs that are in server but not in client
 			handleDiff(listResponse+6, length_Message, clientSongs, serverSongs);
 
-			printf("ENTERED AFTER HANDLEDIFF\n");
-
 			// retrieve lengths of clientSongs and serverSongs
-			unsigned long lengthClient = getLength(clientSongs);
-// DEBUGGING
-			for (i = 0; i < lengthClient; i++)
-			{
-				printf("%c", clientSongs[i]);
-			}
-			printf("\n");
-
-			unsigned long lengthServer = getLength(serverSongs);
-
+			unsigned long lengthClient = retrieveLength(clientSongs);
+			unsigned long lengthServer = retrieveLength(serverSongs);
 			printf("lengthMessage: %lu\n", lengthClient); // DEBUGGING
 			printf("lengthMessage: %lu\n", lengthServer); // DEBUGGING
 
@@ -268,7 +257,6 @@ int main (int argc, char *argv[])
 				char songName[MAX_SONGNAME_LENGTH+1];
 				strncpy(songName, clientSongs + 2 + i*(MAX_SONGNAME_LENGTH+SHA_LENGTH), MAX_SONGNAME_LENGTH);
 				songName[MAX_SONGNAME_LENGTH] = '\0';
-				printf("songName: %s\n", songName);
 
 				// retrieve SHA from clientSongs
 				char SHA[SHA_LENGTH+1];

@@ -3,6 +3,9 @@
 #include "NetworkHeader.h"
 #include "WhoHeader.h"
 
+void getSong(char* songName, char* song, int* numBytes);
+void storeSong(char* songName, char* song, int numBytes);
+
 // receives and sets response packet to response
 unsigned long receiveResponse(int sock, char* response);
 
@@ -73,12 +76,12 @@ void HandleProj4Client(int cliSock, char *databaseName)
 				{
 					songName[r] = '\0';
 				}
-				printf("songName: %s\n", songName); // debugging
+				//printf("songName: %s\n", songName); // debugging
 
 				// retrieve SHA 
 				char sha[SHA_LENGTH+1];
 				strcpy(sha, (*oneSong)+firstIndex+1);
-				printf("SHA: %s\n", sha); // debugging
+				//printf("SHA: %s\n", sha); // debugging
 
 				// store song name in listResponse packet
 				int j;

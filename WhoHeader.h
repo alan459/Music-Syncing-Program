@@ -1,6 +1,3 @@
-#ifndef WHO_HEADER__H 
-#define WHO_HEADER__H
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -51,7 +48,7 @@ int fileExists(char* fileName);
 * Shifts the first byte 8 orders of magnitude to the left and adds it to the value
 * of the bit on the right
 **/
-unsigned long getLength(char* field);
+unsigned int getLength(char* field);
 
 /**
 * Takes as a parameter a pointer to the first of 2 bytes of a field specifying length.
@@ -69,5 +66,3 @@ void storeSong(char* songName, char* song, int numBytes);
 
 
 /* End Function Declerations */
-
-#endif

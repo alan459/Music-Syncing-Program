@@ -3,7 +3,7 @@
 
 /* Classwide constants */
 #define MAXIMUM_DATABASE_ENTRY_LENGTH 158
-#define SONG_LENGTH 255
+#define SONG_LENGTH 5
 #define SHA_LENGTH 128
 #define MAX_NUM_RECORDS 500
 
@@ -203,15 +203,6 @@ void addSong(char* songName, char* SHA)
 ****************************************************************************************************************/
 char* compareSongsToClient(char* inputBuffer, int numBufferEntries) 
 {
-
-	int i;
-	/*for (i = 0; i < numBufferEntries; i++)
-	{
-		printf("%c", inputBuffer[i]);
-	}
-	printf("\n");*/
-	
-
   // allocate a variable for names in the buffer
   char* name = malloc(SONG_LENGTH);
   char* sha = malloc(SHA_LENGTH + 1);
@@ -222,29 +213,18 @@ char* compareSongsToClient(char* inputBuffer, int numBufferEntries)
   // pointer to a location in 'result' being added to 
   char* ptr = result;
 
-	ptr = ptr+2;
+  // move pointer past location that will store the length field
+  ptr += 2;
 
   // number of songs currently in the array being returned
-  int numResults = 0;
+  int numResults = 0; 
 
   // go through the entire input buffer
-  for (i = 0; i < numBufferEntries/(SONG_LENGTH+SHA_LENGTH); i++)
+  int i;
+  for (i = 0; i < numBufferEntries; i++)
   {
-/*
-      // retrieve the current song name
-			char songName[MAX_SONGNAME_LENGTH+1];
-			strncpy(songName, inputBuffer+i*(SONG_LENGTH+SHA_LENGTH), MAX_SONGNAME_LENGTH);
-			songName[MAX_SONGNAME_LENGTH] = '\0';*/
-
       // retrieve the current song
       strncpy(name, inputBuffer, SONG_LENGTH);
-
-			int j;
-			for (j = 0; j < 255; j++)
-			{
-				printf("%c", name[j]);
-			}
-			printf("\n");
 
       // move pointer past current song to start of sha field
       inputBuffer += SONG_LENGTH;
@@ -260,15 +240,12 @@ char* compareSongsToClient(char* inputBuffer, int numBufferEntries)
       {
         // add song name to result to be returned
         strncpy(ptr, name, SONG_LENGTH);
-				printf("ptr: %s\n", ptr);
 
         // move pointer past song and null character to place sha is to be added
         ptr += SONG_LENGTH;
 
         // add sha to result to be returned
         strncpy(ptr, sha, SHA_LENGTH);
-
-				ptr = ptr + SHA_LENGTH;
 
         numResults++;
       }
@@ -281,12 +258,6 @@ char* compareSongsToClient(char* inputBuffer, int numBufferEntries)
   // add the length field to the first 2 bytes of result
   convertLengthTo2Bytes(result, numResults);
 
-	printf("result: ");
-	for (i = 0; i < numResults*(SONG_LENGTH+SHA_LENGTH); i++)
-	{
-		printf("%c", result[i]);
-	}
-	printf("\n");
 
   return result;
 }
@@ -348,7 +319,7 @@ char* compareSongsToServer(char* inputBuffer, int numBufferEntries)
         numResults++;
       }
   }
-//printf("numEntries %d\n", numResults);
+printf("numEntries %d\n", numResults);
   // null terminate the result
   strcat(result, "\0");
 

@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include <inttypes.h>
+
+const char* byte_to_binary(uint8_t x, char* binary);
 
 /**
 * Takes as a parameter a pointer to the first of 2 bytes of a field specifying length.
@@ -8,8 +11,18 @@
 **/
 unsigned int getLength(char* field)
 {
-	return (unsigned int) ( (field[0] << 8) + field[1] );
-
+	char firstBin[17]; char secondBin[9];
+	byte_to_binary(field[0], firstBin);
+	byte_to_binary(field[1], secondBin);
+	strcat(firstBin, secondBin);
+	return strtoul(firstBin, NULL, 2);
+/*
+  uint8_t field0, field1;
+  field0 = field[0];
+  field1 = field[1];
+  int result = (field0 << 8) | field1;
+  return (unsigned int) result;
+	//return (unsigned int) ( (field[0] << 8) + field[1] );*/
 }
 
 
@@ -21,6 +34,9 @@ unsigned int getLength(char* field)
 **/
 void convertLengthTo2Bytes(char* ptr, unsigned long length)
 {
+	ptr[1] = (uint16_t)length;
+	ptr[0] = (uint16_t)length >> 8;
+/*
 	// get the rightmost 8 bits of the length field
 	char byte2 = (char) length % 256;
 
@@ -28,7 +44,7 @@ void convertLengthTo2Bytes(char* ptr, unsigned long length)
 	char byte1 = (char) length / 256;
 
 	ptr[0] = byte1;
-	ptr[1] = byte2;
+	ptr[1] = byte2;*/
 
 }
 
