@@ -43,11 +43,18 @@ unsigned long receiveResponse(int sock, char* response)
 		totalBytesRcvd = totalBytesRcvd + numBytesRcvd;
 
 		printf("totalBytesRcvd: %i\nlength_Message: %lu\n", totalBytesRcvd, length_Message); // DEBUGGING
+		printf("packet in receiveResponse: ");
+		for (u = 0; u < totalBytesRcvd; u++)
+		{
+			printf("%c", response[u]);
+		}
+		printf("\n");
 
 		// if message received is length_Message long, exit the loop
 		// 4 for type field, 2 for length field
 		if (totalBytesRcvd == 4 + 2 + length_Message)
 		{
+			printf("ENTERED TOTAL!!!!\n");
 			response[totalBytesRcvd] = '\0';
 			return length_Message;
 		}

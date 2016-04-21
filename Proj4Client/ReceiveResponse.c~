@@ -48,6 +48,7 @@ unsigned long receiveResponse(int sock, char* response)
 		// 4 for type field, 2 for length field
 		if (totalBytesRcvd == 4 + 2 + length_Message)
 		{
+			printf("ENTERED TOTAL!!!!\n");
 			response[totalBytesRcvd] = '\0';
 			return length_Message;
 		}

@@ -1,6 +1,8 @@
 #include "NetworkHeader.h"
 
-const char* byte_to_binary(uint8_t x, char* binary);
+// given a packet, looks at the length field (4-5th bytes) and returns
+// its corresponding decimal value as unsigned long
+unsigned long retrieveLength(char* packet);
 
 // Receives and sets response packet to response.
 // Returns length field of response pakcet as unsigned long.
@@ -32,11 +34,7 @@ unsigned long receiveResponse(int sock, char* response)
 		// retrieve the length field from message. (located 4th-5th bytes)
 		if (!retrievedLength && numBytesRcvd >= 6)
 		{
-			char firstBin[17]; char secondBin[9];
-			byte_to_binary(response[4], firstBin);
-			byte_to_binary(response[5], secondBin);
-			strcat(firstBin, secondBin);
-			length_Message = (unsigned long)strtoul(firstBin, NULL, 2);
+			length_Message = retrieveLength(response);
 
 			retrievedLength = 1;
 		}

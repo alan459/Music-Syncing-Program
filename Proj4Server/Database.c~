@@ -3,7 +3,7 @@
 
 /* Classwide constants */
 #define MAXIMUM_DATABASE_ENTRY_LENGTH 158
-#define SONG_LENGTH 5
+#define SONG_LENGTH 255
 #define SHA_LENGTH 128
 #define MAX_NUM_RECORDS 500
 
@@ -178,11 +178,23 @@ char* getSongName(char* SHA)
 ****************************************************************************************************************/
 void addSong(char* songName, char* SHA) 
 {
-  FILE* append = filePointer;
-  fseek(append, 0, SEEK_END); // get to the end of the file
+  FILE* append2 = fopen("database.dat","a+");
+  fseek(append2, 0, SEEK_END); // get to the end of the file
 
-  fprintf(append, "%s:%s\n", songName, SHA); // add to end of file
-  fclose(append); // close the file pointer
+/*
+	printf("songName in addSong: ");
+	int i;
+	for (i = 0; i < 255; i++)
+	{
+		printf("%c", songName[i]);
+	}
+	printf("\n");
+*/
+	
+  fprintf(append2, "%s:%s\n", songName, SHA); // add to end of file
+  fclose(append2); // close the file pointer
+
+	printf("ENTERED MIDDLE OF ADDSONG\n");
 
   // allocate space for a song and SHA entry in the classwide array
   songList[numEntries] = (char *) malloc(SONG_LENGTH + SHA_LENGTH + 2); 
@@ -190,6 +202,7 @@ void addSong(char* songName, char* SHA)
   // add a song and its SHA to the list of entries in the classwide variable
   sprintf(songList[numEntries], "%s:%s", songName, SHA);
   numEntries++;
+	printf("songgg %s\n", songList[numEntries-1]);
 }
 
 
@@ -201,8 +214,17 @@ void addSong(char* songName, char* SHA)
 *
 * Returns a list of songs:SHA pairings of files not stored on our local database based on SHA values. 
 ****************************************************************************************************************/
-char* compareSongsToClient(char* inputBuffer, int numBufferEntries) 
+char* compareSongsToServer(char* inputBuffer, int numBufferEntries) 
 {
+
+	int i;
+	/*for (i = 0; i < numBufferEntries; i++)
+	{
+		printf("%c", inputBuffer[i]);
+	}
+	printf("\n");*/
+	
+
   // allocate a variable for names in the buffer
   char* name = malloc(SONG_LENGTH);
   char* sha = malloc(SHA_LENGTH + 1);
@@ -213,18 +235,29 @@ char* compareSongsToClient(char* inputBuffer, int numBufferEntries)
   // pointer to a location in 'result' being added to 
   char* ptr = result;
 
-  // move pointer past location that will store the length field
-  ptr += 2;
+	ptr = ptr+2;
 
   // number of songs currently in the array being returned
-  int numResults = 0; 
+  int numResults = 0;
 
   // go through the entire input buffer
-  int i;
-  for (i = 0; i < numBufferEntries; i++)
+  for (i = 0; i < numBufferEntries/(SONG_LENGTH+SHA_LENGTH); i++)
   {
+/*
+      // retrieve the current song name
+			char songName[MAX_SONGNAME_LENGTH+1];
+			strncpy(songName, inputBuffer+i*(SONG_LENGTH+SHA_LENGTH), MAX_SONGNAME_LENGTH);
+			songName[MAX_SONGNAME_LENGTH] = '\0';*/
+
       // retrieve the current song
       strncpy(name, inputBuffer, SONG_LENGTH);
+
+			int j;
+			for (j = 0; j < 255; j++)
+			{
+				printf("%c", name[j]);
+			}
+			printf("\n");
 
       // move pointer past current song to start of sha field
       inputBuffer += SONG_LENGTH;
@@ -247,6 +280,8 @@ char* compareSongsToClient(char* inputBuffer, int numBufferEntries)
         // add sha to result to be returned
         strncpy(ptr, sha, SHA_LENGTH);
 
+				ptr = ptr + SHA_LENGTH;
+
         numResults++;
       }
   }
@@ -258,6 +293,13 @@ char* compareSongsToClient(char* inputBuffer, int numBufferEntries)
   // add the length field to the first 2 bytes of result
   convertLengthTo2Bytes(result, numResults);
 
+/* // DEBUGGING
+	printf("result: ");
+	for (i = 0; i < 2+numResults*(SONG_LENGTH+SHA_LENGTH); i++)
+	{
+		printf("%c", result[i]);
+	}
+	printf("\n");*/
 
   return result;
 }
@@ -271,7 +313,7 @@ char* compareSongsToClient(char* inputBuffer, int numBufferEntries)
 *
 * Returns a list of songs:SHA pairings of files not stored on the server database based on SHA values. 
 ****************************************************************************************************************/
-char* compareSongsToServer(char* inputBuffer, int numBufferEntries) 
+char* compareSongsToClient(char* inputBuffer, int numBufferEntries) 
 {
   // current line of local database
   char* currentLine = (char*) malloc(SONG_LENGTH + SHA_LENGTH + 1);
@@ -306,7 +348,7 @@ char* compareSongsToServer(char* inputBuffer, int numBufferEntries)
       sha = strtok(NULL, ":");
 
       // if the song is not found in the database, add it to output buffer
-      if(listContainsSong(sha, inputBuffer, numBufferEntries) == 0) // FALSE
+      if(listContainsSong(sha, inputBuffer, numBufferEntries/(SONG_LENGTH+SHA_LENGTH)) == 0) // FALSE
       {
         // add song name : SHA to result to be returned
         strncpy(ptr, name, SONG_LENGTH); 
@@ -319,7 +361,7 @@ char* compareSongsToServer(char* inputBuffer, int numBufferEntries)
         numResults++;
       }
   }
-printf("numEntries %d\n", numResults);
+//printf("numEntries %d\n", numResults);
   // null terminate the result
   strcat(result, "\0");
 
@@ -341,6 +383,10 @@ int listContainsSong(char* comparedSha, char* inputBuffer, int numBufferEntries)
 
   // move pointer past first song to start of sha
   inputBuffer += SONG_LENGTH;
+	
+/*
+	printf("numBufferEntries???: %i\n", numBufferEntries);
+	printf("\n\ncomparedSHA: %s\n\n", comparedSha);*/
 
   // loop through the list of song:SHA pairings in the local database
   int i;
@@ -351,7 +397,6 @@ int listContainsSong(char* comparedSha, char* inputBuffer, int numBufferEntries)
 
     // move pointer past current sha and past next song name to start of next sha
     inputBuffer += SHA_LENGTH + SONG_LENGTH;
-
     if(strcmp(comparedSha, shaField) == 0) // if passed in SHA equals current SHA
     {
       return 1; // return true
@@ -422,16 +467,20 @@ void getSong(char* songName, char* song, int* numBytes)
 void storeSong(char* songName, char* song, int numBytes)
 {
   FILE* file;
-  if ( (file = fopen(songName, "w+")) == NULL )
+  if ( (file = fopen(songName, "w")) == NULL )
   {
     fprintf(stderr, "Error: Can't open file %s\n", songName);
     exit(1);
   }
 
+	printf("song in storeSong\n");
   int i;
   for (i = 0; i < numBytes; i++)
   {
     fputc(song[i], file);
+		printf("%c", song[i]); // DEBUGGING
   }
+	printf("\n");
+
 	fclose(file);
 }

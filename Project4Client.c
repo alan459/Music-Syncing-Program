@@ -9,6 +9,14 @@
 // its corresponding decimal value as unsigned long
 unsigned long retrieveLength(char* packet);
 
+// Constructs and sends LEAVE message to server.
+void sendLEAVE(int sock);
+
+// Prints every song names in given packet.
+// numSongs represents number of songs in packet
+// First two bytes: length field, then song name, SHA, song name, SHA,...
+void printDIFF(char* packet, unsigned long numSongs);
+
 // prints every song and SHA combination from listResponse.
 // numEntries represents number of song and SHA combinations in listResponse.
 void printLIST(char* listResponse, unsigned long numEntries);
@@ -18,6 +26,9 @@ void sendLIST(int sock);
 
 // Constructs and sends PUSH message to server
 void sendPUSH(int sock, unsigned long messageLen, char* songName, char* SHA, char* songFile, int songSize);
+
+// Constructs and sends PULL message to server
+void sendPULL(int sock, char* SHA);
 
 // Receives and sets response packet to response.
 // Returns length field of response pakcet as unsigned long.
@@ -39,16 +50,14 @@ int main (int argc, char *argv[])
    */
 
   // Argument parsing variables
-  char *firstName;
-  char *lastName;
   char *serverHost = SERVER_HOST;
   char *serverPort = SERVER_PORT; 
   char *servPortString;
   char c;
   int i;
 
-  if ((argc < 5) || (argc > 7)) {
-    printf("Error: Usage Project0Client [-s <server IP/Name>[:<port>]] -f <firstName> -l <lastName>\n");
+  if ((argc < 1) || (argc > 3)) {
+    printf("Error: Usage Project0Client [-s <server IP/Name>[:<port>]]\n");
     exit(1);
   }
 
@@ -60,12 +69,7 @@ int main (int argc, char *argv[])
        * argument to get the value of 
        * the option */
       switch (c) {
-      case 'f':
-	firstName = argv[i+1];
-	break;
-      case 'l':
-	lastName = argv[i+1];
-	break;
+
       case 's':
 	serverHost = strtok(argv[i+1],":");
 	if ((servPortString = strtok(NULL, ":")) != NULL) {
@@ -78,15 +82,16 @@ int main (int argc, char *argv[])
     }
   }
 
-  /* Your networking code starts here */
-
 	// create a connected TCP socket
 	int sock = SetupTCPClientSocket(serverHost, serverPort);
 	if (sock < 0)
 		DieWithError("SetupTCPClientSocket() failed");
 
+	// open database file
+	open_database("database.dat");
+
 	// ask user for command (list, diff, sync, leave)
-	printf("Please Enter Command in Small Case:\n");
+	printf("Enter Command in Small Case: ");
 	char* command = (char*) malloc(5); 
 	scanf("%s", command);
 	
@@ -101,20 +106,13 @@ int main (int argc, char *argv[])
 			// receive listResponse from server
 			char listResponse[BUFFSIZE];
 			unsigned long length_Message = receiveResponse(sock, listResponse);
-
-			/*
-			// print listResponse DEBUGGING
-			int j;
-			for (j = 0; j < totalBytesRcvd; j++)
-			{
-				printf("%c", listResponse[j]);
-			}
-			printf("\n"); */
 			
-			// print every song and SHA combination from listResponse
+			// print every song from listResponse
 			printLIST(listResponse, length_Message);
 
-			scanf("%s", command); // read another command from user
+			// read another command from user
+			printf("Enter Another Command in Small Case: ");
+			scanf("%s", command);
 		}
 
 		else if (strcmp(command, "pull") == 0)
@@ -169,8 +167,11 @@ int main (int argc, char *argv[])
 			// print song name and song file DEBUGGING
 			printf("%s \t %s\n", songName, song);
 
+			printf("Enter Another Command in Small Case: ");
+			scanf("%s", command); // wait for another command
 		}
 		
+		// DEBUGGING
 		else if (strcmp(command, "push") == 0)
 		{
 			// construct PUSH message
@@ -226,7 +227,39 @@ int main (int argc, char *argv[])
 			else if (numBytes != 4+2+MAX_SONGNAME_LENGTH+SHA_LENGTH+15) // 15 MUST BE REPLACED BY FILE LENGTH LATER
 				DieWithError("send() failed: sent unexpected number of bytes");
 			
-			break;
+			printf("Enter Another Command in Small Case: ");
+			scanf("%s", command);
+		}
+
+		else if (strcmp(command, "diff") == 0)
+		{
+			printf("ENTERED DIFF!!!\n");
+			// send LIST message to server
+			sendLIST(sock);
+
+			// receive listResponse from server
+			char listResponse[BUFFSIZE];
+			unsigned long length_Message = receiveResponse(sock, listResponse);
+
+			// calculate different song files between client and server
+			char* clientSongs = compareSongsToClient(listResponse+6, length_Message); // songs that are in client but not in server
+			char* serverSongs = compareSongsToServer(listResponse+6, length_Message); // songs that are in server but not in client
+
+			// retrieve lengths of clientSongs and serverSongs
+			unsigned long lengthClient = getLength(clientSongs);
+			unsigned long lengthServer = getLength(serverSongs);
+
+			// print songs in client but not in server
+			printf("Songs in client but not in server: \n");
+			printDIFF(clientSongs, lengthClient);
+
+			// print songs in server but not in client
+			printf("Songs in server but not in client: \n");
+			printDIFF(serverSongs, lengthServer);
+
+			// wait for another command
+			printf("Enter Another Command in Small Case: ");
+			scanf("%s", command);
 		}
 
 		else if (strcmp(command, "sync") == 0)
@@ -239,17 +272,34 @@ int main (int argc, char *argv[])
 			unsigned long length_Message = receiveResponse(sock, listResponse);
 
 			// calculate different song files between client and server
-			char* clientSongs = ""; // songs that are in client but not in server
-			char* serverSongs = ""; // songs that are in server but not in client
-			handleDiff(listResponse+6, length_Message, clientSongs, serverSongs);
+			char* clientSongs = compareSongsToClient(listResponse+6, length_Message); // songs that are in client but not in server
+			char* serverSongs = compareSongsToServer(listResponse+6, length_Message); // songs that are in server but not in client
+
 
 			// retrieve lengths of clientSongs and serverSongs
-			unsigned long lengthClient = retrieveLength(clientSongs);
-			unsigned long lengthServer = retrieveLength(serverSongs);
+			unsigned long lengthClient = getLength(clientSongs);
+			unsigned long lengthServer = getLength(serverSongs);
+
+/*// DEBUGGING
+			printf("clientSongs: ");
+			for (i = 0; i < 2+lengthClient*(MAX_SONGNAME_LENGTH+SHA_LENGTH); i++)
+			{
+				printf("%c", clientSongs[i]);
+			}
+			printf("\n");
+
+			printf("serverSongs: ");
+			for (i = 0; i < 2+lengthServer*(MAX_SONGNAME_LENGTH+SHA_LENGTH); i++)
+			{
+				printf("%c", serverSongs[i]);
+			}
+			printf("\n");
+
 			printf("lengthMessage: %lu\n", lengthClient); // DEBUGGING
 			printf("lengthMessage: %lu\n", lengthServer); // DEBUGGING
+*/
 
-			// push all the songs to server from clientSongs
+			// push all the songs from clientSongs to server 
 			int i;
 			for (i = 0; i < lengthClient; i++)
 			{
@@ -257,6 +307,7 @@ int main (int argc, char *argv[])
 				char songName[MAX_SONGNAME_LENGTH+1];
 				strncpy(songName, clientSongs + 2 + i*(MAX_SONGNAME_LENGTH+SHA_LENGTH), MAX_SONGNAME_LENGTH);
 				songName[MAX_SONGNAME_LENGTH] = '\0';
+				printf("pushing songName: %s\n", songName);
 
 				// retrieve SHA from clientSongs
 				char SHA[SHA_LENGTH+1];
@@ -268,30 +319,124 @@ int main (int argc, char *argv[])
 				int songSize;
 				getSong(songName, songFile, &songSize);
 				songSize = songSize - 2; // has to do with how file works(?)
-				printf("SONG SIZE: %i\n", songSize); // DEBUGGING
+				//printf("pushing SONG SIZE: %i\n", songSize); // DEBUGGING
 				songFile[songSize] = '\0'; // append null-terminator
-				printf("SONG RECEIVED: %s\n", songFile); // DEBUGGING
+				printf("pushing song file: %s\n", songFile); // DEBUGGING
 
 				// construct and send PUSH message to server
-				int length_field = 4+2+MAX_SONGNAME_LENGTH+SHA_LENGTH+songSize;
+				int length_field = MAX_SONGNAME_LENGTH+SHA_LENGTH+songSize; // calculate length field in push message
 				sendPUSH(sock, length_field, songName, SHA, songFile, songSize);
+
+				// receive pushResponse from server
+				char pushResponse[BUFFSIZE]; // create pushResponse
+				receiveResponse(sock, pushResponse);
 			}
+
+			// pull all the songs from serverSongs to client
+			for (i = 0; i < lengthServer; i++)
+			{
+				// retrieve song name from serverSongs
+				char songName[MAX_SONGNAME_LENGTH+1];
+				strncpy(songName, serverSongs + 2 + i*(MAX_SONGNAME_LENGTH+SHA_LENGTH), MAX_SONGNAME_LENGTH);
+				songName[MAX_SONGNAME_LENGTH] = '\0';
+				printf("pulling songName: %s\n", songName); // DEBUGGING
+
+				// retrieve SHA from serverSongs
+				char SHA[SHA_LENGTH+1];
+				strncpy(SHA, serverSongs + 2 + i*(MAX_SONGNAME_LENGTH+SHA_LENGTH) + MAX_SONGNAME_LENGTH, SHA_LENGTH);
+				SHA[SHA_LENGTH] = '\0';
+
+				// send PULL message
+				sendPULL(sock, SHA);
+
+				printf("SENT PULL MESSAGE!!!\n");
+
+				// receive pullResponse message from server
+				char pullResponse[BUFFSIZE]; // create pullResponse
+				receiveResponse(sock, pullResponse);
+
+				// retrieve song file
+				char song[MAX_SONG_LENGTH+1];
+				strncpy(song, pullResponse+4+2, MAX_SONG_LENGTH);
+				song[MAX_SONG_LENGTH] = '\0';
+
+				// song file length is precisely length field in pullResponse
+				int songLength = retrieveLength(pullResponse);
+
+				printf("pulled song length: %i\n", songLength);
+
+				// store song in database
+				storeSong(songName, song, songLength); // stores song file in this directory
+				addSong(songName, SHA); // stores song in txt file that keeps track of list of song and SHA combinations
+			}
+
+			printf("Enter Another Command in Small Case: ");
+			scanf("%s", command); // wait for another command
+
 		}
 
 	}
 
+	// send LEAVE message to server
+	sendLEAVE(sock);
+
 	return 0;
 }
+
+
+// Constructs and sends LEAVE message to server.
+void sendLEAVE(int sock)
+{
+	// Construct LEAVE message
+	char leaveMessage[BUFFSIZE];
+	strcpy(leaveMessage, LEAVEType);
+	// length field is zero
+	leaveMessage[4] = 0x0;
+	leaveMessage[5] = 0x0;
+
+	// send LEAVE message to server
+	ssize_t numBytesSent = send(sock, leaveMessage, 4+2, 0);
+	if (numBytesSent < 0)
+	{
+		DieWithError("send() failed");
+	}
+}
+
+// Prints every song names in given packet.
+// numSongs represents number of songs in packet
+// First two bytes: length field, then song name, SHA, song name, SHA,...
+void printDIFF(char* packet, unsigned long numSongs)
+{
+		int i;
+		for (i = 0; i < numSongs; i++)
+		{
+			// retrieve song name from packet
+			char songName[MAX_SONGNAME_LENGTH+1];
+			strncpy(songName, packet + 2 + i*(MAX_SONGNAME_LENGTH+SHA_LENGTH), MAX_SONGNAME_LENGTH);
+			songName[MAX_SONGNAME_LENGTH] = '\0';
+
+			printf("%s\n", songName);
+		}
+		printf("\n");
+} 
 
 // Constructs and sends LIST message to server.
 void sendLIST(int sock)
 {
 	// construct LIST message
 	char listMessage[BUFFSIZE];
-	strcat(listMessage, LISTType);
+	strcpy(listMessage, LISTType);
 	// length field is zero
 	listMessage[4] = 0x0;
 	listMessage[5] = 0x0;
+
+	printf("LIST TYPE??: ");
+	int i;
+	for (i = 0; i < 4; i++)
+	{
+		printf("%c", listMessage[i]);
+	}
+	printf("\n");
 	
 	// send LIST message to server
 	ssize_t numBytesSent = send(sock, listMessage, 4+2, 0);
@@ -307,7 +452,7 @@ void sendLIST(int sock)
 void printLIST(char* listResponse, unsigned long numEntries)
 {
 	// print the names of the songs in the server to stdout
-	printf("Song name \t SHA\n");
+	printf("Song name\n");
 	int i;
 	for (i = 0; i < numEntries/(MAX_SONGNAME_LENGTH+SHA_LENGTH); i++)
 	{
@@ -321,8 +466,8 @@ void printLIST(char* listResponse, unsigned long numEntries)
 		strncpy(currentSHA, listResponse+4+2+i*(MAX_SONGNAME_LENGTH+SHA_LENGTH)+MAX_SONGNAME_LENGTH, SHA_LENGTH);
 		currentSHA[SHA_LENGTH] = '\0';
 
-		// print song name and SHA
-		printf("%s \t %s\n", currentSongName, currentSHA);
+		// print song name 
+		printf("%s\n", currentSongName);
 	}
 }
 
@@ -340,7 +485,7 @@ void sendPUSH(int sock, unsigned long messageLen, char* songName, char* SHA, cha
 	pushMessage[4] = (uint16_t)messageLen >> 8;
 			
 						unsigned long lengthMessage = retrieveLength(pushMessage);
-						printf("lengthMessage: %lu\n", lengthMessage); // DEBUGGING
+						printf("pushed lengthMessage: %lu\n", lengthMessage); // DEBUGGING
 
 	// append songName
 	int i;
@@ -361,11 +506,54 @@ void sendPUSH(int sock, unsigned long messageLen, char* songName, char* SHA, cha
 		pushMessage[4+2+MAX_SONGNAME_LENGTH+SHA_LENGTH+i] = songFile[i];
 	}
 
+	printf("push Message SENT: ");
+	for (i = 0; i < 4+2+MAX_SONGNAME_LENGTH+SHA_LENGTH+songSize; i++)
+	{
+		printf("%c", pushMessage[i]);
+	}
+	printf("\n");
+
 	// send pushMessage to server
 	ssize_t numBytes = send(sock, pushMessage, 4+2+MAX_SONGNAME_LENGTH+SHA_LENGTH+songSize, 0);
 	if (numBytes < 0)
 		DieWithError("send() failed");
 	else if (numBytes != 4+2+MAX_SONGNAME_LENGTH+SHA_LENGTH+songSize)
+		DieWithError("send() failed: sent unexpected number of bytes");
+}
+
+// Constructs and sends PULL message to server
+void sendPULL(int sock, char* SHA)
+{
+	// construct PULL message
+	char pullMessage[BUFFSIZE];
+	strcpy(pullMessage, PULLType);
+
+	// message length is SHA_LENGTH
+	pullMessage[5] = (uint16_t)SHA_LENGTH;
+	pullMessage[4] = (uint16_t)SHA_LENGTH >> 8;
+
+	printf("length of pull message sent: %lu\n", retrieveLength(pullMessage));
+
+	// append SHA to pullMessage
+	int k;
+	for (k = 0; k < SHA_LENGTH; k++)
+	{
+		pullMessage[4+2+k] = SHA[k];
+	}
+
+	printf("pull Message SENT: ");
+	for (k = 0; k < 4+2+SHA_LENGTH; k++)
+	{
+		printf("%c", pullMessage[k]);
+	}
+	printf("\n");
+
+	// send the PULL message to the server
+	ssize_t numBytes = send(sock, pullMessage, 4+2+SHA_LENGTH, 0);
+	//printf("numBytes sent for PULL: %zu\n", numBytes); // debugging
+	if (numBytes < 0)
+		DieWithError("send() failed");
+	else if (numBytes != 4+2+SHA_LENGTH)
 		DieWithError("send() failed: sent unexpected number of bytes");
 }
 

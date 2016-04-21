@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <inttypes.h>
-#include "NetworkHeader.h"
 
 const char* byte_to_binary(uint8_t x, char* binary);
 

@@ -198,6 +198,19 @@ void HandleProj4Client(int cliSock, char *databaseName)
 			// store song in database
 			storeSong(songName, song, songLength); // stores song file in this directory
 			addSong(songName, SHA); // stores song in txt file that keeps track of list of song and SHA combinations
+
+			// create response message
+			char pushResponse[4 + 2]; // extra 4 for type field, 2 for length field
+			strcpy(pushResponse, PUSHType);
+			pushResponse[5] = 0x0;
+			pushResponse[4] = 0x0;
+		
+			// send response to client
+			ssize_t numBytesSent = send(cliSock, pushResponse, 4+2, 0);
+			if (numBytesSent < 0)
+			{
+				DieWithError("send() failed");
+			}
 		}
 
 		else if (strcmp(typeField, LEAVEType) == 0)
