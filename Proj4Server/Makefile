@@ -6,7 +6,7 @@
 # Macros
 CLIENT_SRCS=  Project4Client.c TCPClientUtility.c
 SERVER_SRCS=  Project4Server.c HandleProj4Client.c
-SRCS=DieWithError.c Database.c ByteToBinary.c ReceiveResponse.c RetrieveLength.c GetLengthField.c
+SRCS=DieWithError.c Database.c ByteToBinary.c ReceiveResponse.c RetrieveLength.c GetLengthField.c updateNameDatabase.c
 HDRS=NetworkHeader.h WhoHeader.h
 CFLAGS= -Wall
 LFLAGS= 
@@ -20,11 +20,11 @@ all: clean Project4Server Project4Client
 
 Project4Server: $(SERVER_SRCS) $(SRCS) $(HDRS)
 	rm -f $@
-	$(CC) $(CFLAGS) -o $@ $(SERVER_SRCS) $(SRCS) $(LFLAGS)
+	$(CC) -lcrypto $(CFLAGS) -o $@ $(SERVER_SRCS) $(SRCS) $(LFLAGS)
 
 Project4Client: $(CLIENT_SRCS) $(SRCS) $(HDRS)
 	rm -f $@
-	$(CC) $(CFLAGS) -o $@ $(CLIENT_SRCS) $(SRCS) $(LFLAGS)
+	$(CC) -lcrypto $(CFLAGS) -o $@ $(CLIENT_SRCS) $(SRCS) $(LFLAGS)
 
 
 clean:

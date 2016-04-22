@@ -34,6 +34,9 @@ void sendPULL(int sock, char* SHA);
 // Returns length field of response pakcet as unsigned long.
 unsigned long receiveResponse(int sock, char* response);
 
+// Initialize database at server start
+void updateFilesInDatabase();
+
 /*
 Called when the user enters the 'DIFF' command on the client side
 LIST message format 1st 4 chars = message type 'list' next 2 = length, then song:sha.....
@@ -81,6 +84,8 @@ int main (int argc, char *argv[])
       }
     }
   }
+
+updateFilesInDatabase();
 
 	// create a connected TCP socket
 	int sock = SetupTCPClientSocket(serverHost, serverPort);
@@ -385,7 +390,7 @@ void sendLEAVE(int sock)
 {
 	// Construct LEAVE message
 	char leaveMessage[BUFFSIZE];
-	strcat(leaveMessage, LEAVEType);
+	strcpy(leaveMessage, LEAVEType);
 	// length field is zero
 	leaveMessage[4] = 0x0;
 	leaveMessage[5] = 0x0;
@@ -481,7 +486,7 @@ void sendPUSH(int sock, unsigned long messageLen, char* songName, char* SHA, cha
 	pushMessage[4] = (uint16_t)messageLen >> 8;
 			
 						unsigned long lengthMessage = retrieveLength(pushMessage);
-						printf("lengthMessage: %lu\n", lengthMessage); // DEBUGGING
+						printf("pushed lengthMessage: %lu\n", lengthMessage); // DEBUGGING
 
 	// append songName
 	int i;
@@ -520,6 +525,8 @@ void sendPULL(int sock, char* SHA)
 	// message length is SHA_LENGTH
 	pullMessage[5] = (uint16_t)SHA_LENGTH;
 	pullMessage[4] = (uint16_t)SHA_LENGTH >> 8;
+
+	printf("length of pull message sent: %lu\n", retrieveLength(pullMessage));
 
 	// append SHA to pullMessage
 	int k;

@@ -12,6 +12,8 @@
 #include <netdb.h>
 #include <stdint.h>			/* for uint16_t */
 #include <inttypes.h>		/* for printing uint16_t */
+#include <openssl/sha.h>        /* for SHA */
+#include <dirent.h>             /* for directory traversing */
 
 #define DATABASE_NAME "database.dat"
 #define SERVER_HOST "mathcs02"  /* wallis IP address */

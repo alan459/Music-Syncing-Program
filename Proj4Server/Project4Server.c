@@ -2,6 +2,8 @@
 
 #include "NetworkHeader.h"
 
+void updateFilesInDatabase();
+
 int main (int argc, char *argv[])
 {
   if (argc != 3) // Test for correct number of arguments
@@ -9,6 +11,9 @@ int main (int argc, char *argv[])
 		printf("Error: Usage Project4Server -p <port>\n");
     exit(1);
   } 
+
+  // Initialize music files at start
+  updateFilesInDatabase();
 
   char* databaseName = DATABASE_NAME; // Database
   in_port_t servPort = atoi(argv[2]); // Local port
